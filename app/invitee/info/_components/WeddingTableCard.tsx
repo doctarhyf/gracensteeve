@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Heart, Sparkles } from "lucide-react";
-import { TInvitee } from "@/types/types";
+import { TInvitee } from "@/lib/types";
 
 type Props = {
   invitee: TInvitee;
@@ -151,9 +151,9 @@ export default function WeddingTableCard({ invitee }: Props) {
             </div>
           </div>
 
-          {/* RIGHT SIDE */}
+          {/* RIGHT SIDE  OK */}
           <div className="bg-[#efe7d3] flex items-center justify-center p-8 md:p-12">
-            <div className="relative w-full max-w-sm aspect-[3/4] border-4 border-[#b98a1c] shadow-xl overflow-hidden">
+            <div className="relative w-full max-w-sm aspect-3/4 border-4 border-[#b98a1c] shadow-xl overflow-hidden">
               <Image
                 src="/right.jpeg"
                 alt="Wedding couple"
