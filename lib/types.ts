@@ -1,6 +1,6 @@
-import type { ExtractAndTranslateWordsOutput } from "@/ai/flows/extract-and-translate-words";
+/* import type { ExtractAndTranslateWordsOutput } from "@/ai/flows/extract-and-translate-words";
 
-export type AnalysisResult = ExtractAndTranslateWordsOutput;
+export type AnalysisResult = ExtractAndTranslateWordsOutput; */
 //export type Word = AnalysisResult["words"][number];
 //export type Phrase = AnalysisResult["phrases"][number];
 
