@@ -40,9 +40,11 @@ async function getInvitee(id: string): Promise<TInvitee | null> {
 export default async function InviteInfo({
   searchParams,
 }: {
-  searchParams: { id?: string };
+  searchParams: Promise<{ id?: string }>;
 }) {
-  const id = searchParams?.id;
+  const { id } = await searchParams;
+
+  console.log("Current Invitee ID => ", id);
 
   if (!id) {
     return <div className="p-10">No invitee ID provided</div>;
