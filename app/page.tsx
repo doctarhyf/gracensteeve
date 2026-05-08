@@ -22,6 +22,8 @@ function WeddingInvitationInner() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
 
+  const idIsNull = id === null;
+
   const [isOpen, setIsOpen] = useState(false);
   const [invitee, setInvitee] = useState<TInvitee | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ function WeddingInvitationInner() {
     fetchInvitee();
   }, [id]);
 
-  if (loading) {
+  if (loading && !idIsNull) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#e8e0ce] text-[#5a4a2a]">
         Loading invitation...
@@ -71,10 +73,52 @@ function WeddingInvitationInner() {
     );
   }
 
-  if (!invitee || id === null) {
+  if (!invitee) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#e8e0ce] text-red-600">
-        Invitee not found
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#e8e0ce] text-center px-6">
+        {/* Sad Icon */}
+        <div className="mb-6">
+          <svg
+            width="90"
+            height="90"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="text-red-500"
+          >
+            <path
+              d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M8 15s1.5-2 4-2 4 2 4 2"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M9 9h.01M15 9h.01"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        {/* Message */}
+        <h1 className="text-2xl font-semibold text-gray-800 mb-2">
+          Oops… invitation not found
+        </h1>
+
+        <p className="text-gray-700 max-w-md">
+          It looks like this link might be broken or incomplete. Please
+          double-check the invitation URL or ask the host to resend it.
+        </p>
+
+        <p className="mt-4 text-sm text-gray-600">
+          If you believe this is a mistake, kindly reach out to the event
+          organizer.
+        </p>
       </div>
     );
   }
