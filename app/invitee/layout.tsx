@@ -16,7 +16,9 @@ export default function InviteeLayout({
           borderRight: "1px solid #ddd",
         }}
       >
-        <h2 style={{ marginBottom: "20px" }}>Invitee Menu</h2>
+        <h2 className="text-4xl font-serif italic text-[#c49a1d]">
+          Invitee Menu
+        </h2>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <Link href="/invitee" style={{ fontWeight: "bold" }}>
