@@ -176,7 +176,7 @@ export default function InviteesTable() {
               <select
                 value={familyFilter}
                 onChange={(e) => setFamilyFilter(e.target.value)}
-                className="w-full sm:w-[180px] px-4 py-3 rounded-xl border bg-white text-[#7a6340] outline-none focus:ring-2 focus:ring-[#c9ae6a] cursor-pointer"
+                className="w-full sm:w-45 px-4 py-3 rounded-xl border bg-white text-[#7a6340] outline-none focus:ring-2 focus:ring-[#c9ae6a] cursor-pointer"
               >
                 <option value="">All families</option>
                 {families.map((family) => (
@@ -215,7 +215,9 @@ export default function InviteesTable() {
             {/* FAMILY BREAKDOWN */}
             {Object.keys(stats.byFamily).length > 0 && (
               <div className="mt-4 bg-white border border-[#e5d8bc] rounded-2xl p-4">
-                <p className="text-xs text-[#7a6340] uppercase mb-3">By Family</p>
+                <p className="text-xs text-[#7a6340] uppercase mb-3">
+                  By Family
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(stats.byFamily)
                     .sort((a, b) => b[1] - a[1])
