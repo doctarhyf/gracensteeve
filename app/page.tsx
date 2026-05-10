@@ -16,7 +16,7 @@ const supabase = createClient(
 const baseUrl =
   process.env.NODE_ENV === "development"
     ? "http://localhost:9002"
-    : "https://hanzisnap.vercel.app";
+    : "https://gracensteeve.vercel.app";
 
 // ── Inner component that uses useSearchParams ──
 function WeddingInvitationInner() {
