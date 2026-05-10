@@ -529,7 +529,7 @@ export default function InviteesTable() {
                 <label className="text-xs uppercase text-[#7a6340] mb-1 block">Family</label>
                 <select
                   value={editForm.family || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, family: e.target.value }))}
+                  onChange={(e) => setEditForm((f) => ({ ...f, family: e.target.value as TInvitee["family"] }))}
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 >
                   <option value="">Select family</option>
