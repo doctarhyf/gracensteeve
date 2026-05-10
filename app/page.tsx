@@ -1,756 +1,615 @@
-"use client";
+'use client'
 
-import { TInvitee } from "@/lib/types";
-import { createClient } from "@supabase/supabase-js";
-import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import { useState, Suspense, useEffect } from "react";
-import QRCode from "react-qr-code";
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@supabase/supabase-js'
 
+// ─── Supabase ────────────────────────────────────────────────────────────────
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-const baseUrl =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:9002"
-    : "https://hanzisnap.vercel.app";
+// ─── Types ───────────────────────────────────────────────────────────────────
+type TableShape = 'round' | 'rectangular'
 
-// ── Inner component that uses useSearchParams ──
-function WeddingInvitationInner() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+interface WeddingTable {
+  id: number
+  table_number: number
+  table_name: string | null
+  capacity: number
+  shape: TableShape
+  notes: string | null
+  created_at: string
+}
 
-  const idIsNull = id === null;
+type InviteeStatus = 'Mr.' | 'Mme' | 'Couple'
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [invitee, setInvitee] = useState<TInvitee | null>(null);
-  const [loading, setLoading] = useState(true);
+interface Invitee {
+  id: string
+  full_name: string
+  table_number: number
+  seat_number: number | null
+  phone_number: string | null
+  confirmed: boolean
+  status: InviteeStatus
+  table_mates: string[]
+}
 
-  useEffect(() => {
-    const fetchInvitee = async () => {
-      if (!id) return;
+type ViewMode = 'list' | 'map'
 
-      setLoading(true);
+// ─── Status colours ──────────────────────────────────────────────────────────
+const STATUS_COLOUR: Record<InviteeStatus, string> = {
+  'Mr.':    '#6366f1',
+  'Mme':    '#ec4899',
+  'Couple': '#f59e0b',
+}
 
-      const { data, error } = await supabase
-        .from("invitees")
-        .select("*")
-        .eq("id", id)
-        .single();
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function groupByTable(invitees: Invitee[]): Record<number, Invitee[]> {
+  return invitees.reduce((acc, inv) => {
+    if (!acc[inv.table_number]) acc[inv.table_number] = []
+    acc[inv.table_number].push(inv)
+    return acc
+  }, {} as Record<number, Invitee[]>)
+}
 
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
-      }
+const defaultForm = {
+  table_number: '',
+  table_name: '',
+  capacity: '10',
+  shape: 'round' as TableShape,
+  notes: '',
+}
 
-      setInvitee({
-        id: data.id,
-        fullName: data.full_name,
-        tableNumber: data.table_number,
-        tableMates: data.table_mates || [],
-        phoneNumber: data.phone_number,
-        seatNumber: data.seat_number,
-        qrCode: data.qr_code,
-        confirmed: data.confirmed,
-        createdAt: data.created_at,
-        status: data.status,
-      });
-
-      setLoading(false);
-    };
-
-    fetchInvitee();
-  }, [id]);
-
-  if (loading && !idIsNull) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#e8e0ce] text-[#5a4a2a]">
-        Loading invitation...
-      </div>
-    );
-  }
-
-  if (!invitee) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#e8e0ce] text-center px-6">
-        {/* Sad Icon */}
-        <div className="mb-6">
-          <svg
-            width="90"
-            height="90"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="text-red-500"
-          >
-            <path
-              d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M8 15s1.5-2 4-2 4 2 4 2"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M9 9h.01M15 9h.01"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        {/* Message */}
-        <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-          Oops… invitation not found
-        </h1>
-
-        <p className="text-gray-700 max-w-md">
-          It looks like this link might be broken or incomplete. Please
-          double-check the invitation URL or ask the host to resend it.
-        </p>
-
-        <p className="mt-4 text-sm text-gray-600">
-          If you believe this is a mistake, kindly reach out to the event
-          organizer.
-        </p>
-      </div>
-    );
-  }
+// ─── Seat dot on a round table ───────────────────────────────────────────────
+function SeatDot({ index, total, invitee, r }: {
+  index: number; total: number; invitee?: Invitee; r: number
+}) {
+  const angle = (index / total) * 2 * Math.PI - Math.PI / 2
+  const sr = r - 14
+  const x = 50 + sr * Math.cos(angle)
+  const y = 50 + sr * Math.sin(angle)
+  const colour = invitee ? (STATUS_COLOUR[invitee.status] ?? '#6366f1') : '#e2e8f0'
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+    <g>
+      <circle
+        cx={`${x}%`} cy={`${y}%`} r="6%"
+        fill={colour}
+        stroke={invitee?.confirmed ? '#22c55e' : '#94a3b8'}
+        strokeWidth="2"
+        style={{ filter: invitee ? 'drop-shadow(0 1px 3px rgba(0,0,0,.3))' : 'none' }}
+      />
+      {invitee && (
+        <text
+          x={`${x}%`} y={`${y}%`}
+          textAnchor="middle" dominantBaseline="middle"
+          fontSize="5" fill="#fff" fontWeight="700"
+          style={{ pointerEvents: 'none', userSelect: 'none' }}
+        >
+          {invitee.full_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
+        </text>
+      )}
+    </g>
+  )
+}
 
-        .wi-scene {
-          min-height: 100dvh;
-          background: #e8e0ce;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem 1rem;
-          font-family: 'Cormorant Garamond', serif;
-        }
+// ─── Round Table SVG ─────────────────────────────────────────────────────────
+function RoundTableViz({ table, invitees }: { table: WeddingTable; invitees: Invitee[] }) {
+  const seats = Array.from({ length: table.capacity }, (_, i) => invitees[i])
+  const isHead = table.table_number === 1
 
-        /* ── Controls ── */
-        .wi-controls {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 2rem;
-        }
-        .wi-btn {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.85rem;
-          letter-spacing: 0.1em;
-          padding: 0.5rem 1.4rem;
-          border: 1px solid rgba(140,110,50,0.5);
-          background: transparent;
-          color: #5a4a2a;
-          border-radius: 2px;
-          cursor: pointer;
-          transition: all 0.25s;
-        }
-        .wi-btn:hover { background: rgba(184,150,12,0.1); }
-        .wi-btn.active { background: #b8960c; color: #fff; border-color: #b8960c; }
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      {/* table surface */}
+      <circle cx="50%" cy="50%" r="32%"
+        fill={isHead ? '#fef3c7' : '#f8fafc'}
+        stroke={isHead ? '#f59e0b' : '#cbd5e1'}
+        strokeWidth={isHead ? '3' : '2'}
+      />
+      {/* table number */}
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle"
+        fontSize="12" fontWeight="800" fill={isHead ? '#92400e' : '#475569'}>
+        {table.table_number}
+      </text>
+      {/* seats */}
+      {seats.map((inv, i) => (
+        <SeatDot key={i} index={i} total={table.capacity} invitee={inv} r={42} />
+      ))}
+    </svg>
+  )
+}
 
-        /* ── Perspective wrapper ── */
-        .wi-perspective {
-          perspective: 1800px;
-          width: min(560px, 100%);
-        }
+// ─── Rectangular Table SVG ───────────────────────────────────────────────────
+function RectTableViz({ table, invitees }: { table: WeddingTable; invitees: Invitee[] }) {
+  const half = Math.ceil(table.capacity / 2)
+  const top = invitees.slice(0, half)
+  const bottom = invitees.slice(half, table.capacity)
 
-        /* ── Card base ── */
-        .wi-card {
-          position: relative;
-          width: 100%;
-          aspect-ratio: 560 / 380;
-          background: #f5f0e8;
-          border-radius: 4px;
-          box-shadow:
-            0 2px 8px rgba(0,0,0,0.10),
-            0 12px 40px rgba(0,0,0,0.16);
-          display: flex;
-          overflow: hidden;
-        }
-        .wi-card::after {
-          content: '';
-          position: absolute;
-          left: 50%;
-          top: 0; bottom: 0;
-          width: 1px;
-          background: rgba(140,110,50,0.22);
-          z-index: 5;
-          pointer-events: none;
-        }
+  const seatRow = (row: (Invitee | undefined)[], y: number) =>
+    Array.from({ length: half }, (_, i) => {
+      const inv = row[i]
+      const x = 10 + (i / (half - 1 || 1)) * 80
+      const colour = inv ? (STATUS_COLOUR[inv.status] ?? '#6366f1') : '#e2e8f0'
+      return (
+        <g key={i}>
+          <circle cx={`${x}%`} cy={`${y}%`} r="6%"
+            fill={colour}
+            stroke={inv?.confirmed ? '#22c55e' : '#94a3b8'}
+            strokeWidth="2"
+            style={{ filter: inv ? 'drop-shadow(0 1px 3px rgba(0,0,0,.3))' : 'none' }}
+          />
+          {inv && (
+            <text x={`${x}%`} y={`${y}%`} textAnchor="middle" dominantBaseline="middle"
+              fontSize="5" fill="#fff" fontWeight="700">
+              {inv.full_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
+            </text>
+          )}
+        </g>
+      )
+    })
 
-        /* ── Inside panels ── */
-        .wi-panel {
-          width: 50%;
-          height: 100%;
-          padding: clamp(12px, 3%, 24px) clamp(10px, 3%, 22px);
-          display: flex;
-          flex-direction: column;
-        }
-        .wi-panel-left {
-          border-right: 1px dashed rgba(140,110,50,0.18);
-          gap: clamp(4px, 1.2%, 8px);
-        }
-        .wi-panel-right {
-          background: #ece5d0;
-          align-items: center;
-          justify-content: center;
-          gap: clamp(8px, 2%, 14px);
-        }
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <rect x="15%" y="35%" width="70%" height="30%"
+        rx="4" ry="4"
+        fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2"
+      />
+      <text x="50%" y="51%" textAnchor="middle" dominantBaseline="middle"
+        fontSize="11" fontWeight="800" fill="#475569">
+        {table.table_number}
+      </text>
+      {seatRow(top, 22)}
+      {seatRow(bottom, 78)}
+    </svg>
+  )
+}
 
-        /* Inside left copy */
-        .wi-inside-hdr {
-          font-size: clamp(6px, 1.1vw, 8px);
-          letter-spacing: 0.18em;
-          color: #8a7040;
-          text-transform: uppercase;
-          text-align: center;
-        }
-        .wi-names {
-          font-family: 'Playfair Display', serif;
-          font-style: italic;
-          font-size: clamp(12px, 2.8vw, 19px);
-          color: #b8960c;
-          text-align: center;
-          line-height: 1.25;
-        }
-        .wi-amp {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(16px, 3.2vw, 23px);
-          color: #b8960c;
-          display: block;
-          text-align: center;
-          margin: -1px 0;
-        }
-        .wi-gold-rule {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .wi-gold-line { flex: 1; height: 0.5px; background: #b8960c; opacity: 0.5; }
-        .wi-heart { color: #b8960c; font-size: 9px; }
-        .wi-invite-label {
-          font-size: clamp(6px, 1vw, 8px);
-          letter-spacing: 0.1em;
-          color: #8a7040;
-          text-align: center;
-        }
-        .wi-invite-body {
-          font-size: clamp(8px, 1.6vw, 11px);
-          color: #3a2e18;
-          text-align: center;
-          line-height: 1.7;
-        }
-        .wi-date-block { text-align: center; margin-top: 2px; }
-        .wi-date-label { font-size: clamp(7px, 1.2vw, 9px); color: #6a5530; }
-        .wi-date-main {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(11px, 2.2vw, 16px);
-          font-weight: 600;
-          color: #b8960c;
-          display: block;
-        }
-        .wi-date-venue {
-          font-size: clamp(9px, 1.8vw, 12px);
-          font-weight: 600;
-          color: #3a2e18;
-          letter-spacing: 0.04em;
-        }
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function TablesPage() {
+  const [tables, setTables]     = useState<WeddingTable[]>([])
+  const [invitees, setInvitees] = useState<Invitee[]>([])
+  const [view, setView]         = useState<ViewMode>('map')
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [error, setError]       = useState<string | null>(null)
 
-        /* Inside right RSVP */
-        .wi-rsvp-box {
-          width: 100%;
-          border: 0.5px solid rgba(184,150,12,0.4);
-          padding: clamp(8px, 2%, 14px) clamp(6px, 2%, 12px);
-          text-align: center;
-          background: rgba(255,255,255,0.35);
-        }
-        .wi-rsvp-title {
-          font-size: clamp(7px, 1.2vw, 10px);
-          letter-spacing: 0.14em;
-          color: #8a7040;
-          text-transform: uppercase;
-          margin-bottom: 8px;
-          display: block;
-        }
-        .wi-rsvp-line {
-          width: 100%;
-          border-bottom: 0.5px solid rgba(140,110,50,0.4);
-          font-size: clamp(8px, 1.4vw, 11px);
-          color: #3a2e18;
-          margin-bottom: 7px;
-          display: block;
-          padding: 1px 0;
-        }
-        .wi-attend-row {
-          display: flex;
-          gap: 10px;
-          justify-content: center;
-          margin-top: 4px;
-        }
-        .wi-attend-opt {
-          font-size: clamp(7px, 1.2vw, 10px);
-          color: #6a5530;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-        .wi-attend-opt::before {
-          content: '';
-          width: 9px; height: 9px;
-          border: 0.5px solid #b8960c;
-          display: inline-block;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .wi-verse {
-          font-style: italic;
-          font-size: clamp(7px, 1.2vw, 10px);
-          color: #6a5530;
-          text-align: center;
-          line-height: 1.7;
-          padding: 0 4px;
-        }
-        .wi-ornament {
-          color: #b8960c;
-          font-size: clamp(10px, 1.6vw, 14px);
-          opacity: 0.6;
-        }
+  // form state
+  const [form, setForm]         = useState(defaultForm)
+  const [editing, setEditing]   = useState<WeddingTable | null>(null)
+  const [showForm, setShowForm] = useState(false)
 
-        /* ── Front cover flap ── */
-        .wi-flap {
-          position: absolute;
-          top: 0; left: 0;
-          width: 50%;
-          height: 100%;
-          transform-origin: left center;
-          transform-style: preserve-3d;
-          transition: transform 0.95s cubic-bezier(0.645, 0.045, 0.355, 1.0);
-          z-index: 20;
-        }
-        .wi-flap.open { transform: rotateY(-170deg); }
+  // selected table detail
+  const [selected, setSelected] = useState<WeddingTable | null>(null)
 
-        .wi-cover-front,
-        .wi-cover-back {
-          position: absolute;
-          inset: 0;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          overflow: hidden;
-          border-radius: 4px 0 0 4px;
-        }
-        .wi-cover-front {
-          background: #f0eadb;
-          padding: clamp(10px, 3%, 22px) clamp(8px, 2.5%, 18px);
-          display: flex;
-          flex-direction: column;
-        }
-        .wi-cover-back {
-          background: #f5f0e8;
-          transform: rotateY(180deg);
-          border-radius: 0 4px 4px 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+  // ── fetch ──────────────────────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const [{ data: t, error: te }, { data: i, error: ie }] = await Promise.all([
+      supabase.from('sng_tables').select('*').order('table_number'),
+      supabase.from('sng_invitees').select('*').order('table_number'),
+    ])
+    if (te || ie) setError((te || ie)?.message ?? 'Unknown error')
+    else {
+      setTables(t ?? [])
+      setInvitees(i ?? [])
+    }
+    setLoading(false)
+  }, [])
 
-        /* Decorative borders on front cover */
-        .wi-cborder {
-          position: absolute;
-          inset: 7px;
-          border: 1px solid rgba(184,150,12,0.42);
-          border-radius: 2px;
-          pointer-events: none;
-        }
-        .wi-cborder-inner {
-          position: absolute;
-          inset: 12px;
-          border: 0.5px solid rgba(184,150,12,0.22);
-          border-radius: 2px;
-          pointer-events: none;
-        }
+  useEffect(() => { fetchData() }, [fetchData])
 
-        /* Cover typography */
-        .wi-cover-edition {
-          font-size: clamp(5px, 0.9vw, 7px);
-          letter-spacing: 0.2em;
-          color: #5a4a2a;
-          text-transform: uppercase;
-          text-align: center;
-          display: block;
-        }
-        .wi-cover-masthead {
-          font-family: 'UnifrakturMaguntia', cursive;
-          font-size: clamp(14px, 3.5vw, 22px);
-          color: #2a1f0a;
-          text-align: center;
-          line-height: 1;
-          margin: 3px 0;
-        }
-        .wi-cover-date {
-          font-size: clamp(6px, 1vw, 8.5px);
-          letter-spacing: 0.12em;
-          color: #5a4a2a;
-          text-align: center;
-        }
-        .wi-cover-rule {
-          width: 100%;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #b8960c 40%, #b8960c 60%, transparent);
-          margin: 3px 0;
-          opacity: 0.55;
-        }
-        .wi-cover-headline {
-          font-family: 'UnifrakturMaguntia', cursive;
-          font-size: clamp(20px, 5.5vw, 34px);
-          color: #1a1208;
-          line-height: 1.05;
-          margin: 4px 0 6px;
-        }
-        .wi-photo-frame {
-          flex: 1;
-          min-height: 0;
-          background: linear-gradient(160deg, #c4905a, #8b5e3c);
-          border: 2px solid rgba(184,150,12,0.5);
-          margin: 0 auto;
-          width: 72%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          position: relative;
-        }
-        .wi-cover-byline {
-          font-size: clamp(5.5px, 0.9vw, 7.5px);
-          letter-spacing: 0.14em;
-          color: #6a5030;
-          text-transform: uppercase;
-          text-align: center;
-          margin-top: 5px;
-        }
+  const byTable = groupByTable(invitees)
 
-        /* Cover back watermark */
-        .wi-back-wm {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          opacity: 0.4;
-        }
-        .wi-back-wm-logo {
-          font-family: 'UnifrakturMaguntia', cursive;
-          font-size: clamp(20px, 4vw, 30px);
-          color: #b8960c;
-        }
-        .wi-back-wm-line { width: 50px; height: 0.5px; background: #b8960c; }
-        .wi-back-wm-text {
-          font-style: italic;
-          font-size: clamp(8px, 1.2vw, 10px);
-          color: #8a7040;
-          text-align: center;
-          line-height: 1.6;
-        }
+  // ── submit form ────────────────────────────────────────────────────────────
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
 
-        /* ── Hint caption ── */
-        .wi-hint {
-          margin-top: 1.5rem;
-          font-size: 0.8rem;
-          letter-spacing: 0.05em;
-          color: #7a6540;
-          text-align: center;
-        }
+    const payload = {
+      table_number: Number(form.table_number),
+      table_name:   form.table_name || null,
+      capacity:     Number(form.capacity),
+      shape:        form.shape,
+      notes:        form.notes || null,
+    }
 
-        /* ── MOBILE: portrait stacked layout ── */
-        @media (max-width: 600px) {
-          .wi-scene {
-            padding: 1.5rem 0.75rem;
-            justify-content: flex-start;
-            padding-top: 2rem;
-          }
-          .wi-perspective {
-            width: 100%;
-            perspective: 1200px;
-          }
-          .wi-card {
-            flex-direction: column;
-            aspect-ratio: unset;
-            min-height: 85dvh;
-            border-radius: 6px;
-          }
-          .wi-card::after {
-            left: 0; right: 0; top: 50%; bottom: auto;
-            width: 100%; height: 1px;
-          }
-          .wi-panel {
-            width: 100%;
-            height: auto;
-            flex: 1;
-            padding: 20px 22px;
-            gap: 10px;
-          }
-          .wi-panel-left {
-            border-right: none;
-            border-bottom: 1px dashed rgba(140,110,50,0.18);
-          }
-          .wi-panel-right { justify-content: center; }
-          .wi-inside-hdr { font-size: 11px; letter-spacing: 0.15em; text:center }
-          .wi-names { font-size: 26px; line-height: 1.3; }
-          .wi-amp { font-size: 30px; margin: 2px 0; }
-          .wi-heart { font-size: 13px; }
-          .wi-invite-label { font-size: 13px; letter-spacing: 0.08em; }
-          .wi-invite-body { font-size: 15px; line-height: 1.85; }
-          .wi-date-label { font-size: 13px; display: block; margin-bottom: 2px; }
-          .wi-date-main { font-size: 22px; }
-          .wi-date-venue { font-size: 16px; }
-          .wi-rsvp-box { padding: 14px 16px; }
-          .wi-rsvp-title { font-size: 13px; letter-spacing: 0.16em; margin-bottom: 12px; }
-          .wi-rsvp-line { font-size: 14px; margin-bottom: 10px; padding: 3px 0; }
-          .wi-attend-opt { font-size: 14px; gap: 6px; }
-          .wi-attend-opt::before { width: 13px; height: 13px; }
-          .wi-verse { font-size: 14px; line-height: 1.85; }
-          .wi-ornament { font-size: 18px; }
-          .wi-flap {
-            width: 100%;
-            height: 100%;
-            top: 0; left: 0;
-            transform-origin: top center;
-            z-index: 20;
-          }
-          .wi-flap.open { transform: rotateX(170deg); }
-          .wi-cover-front,
-          .wi-cover-back { border-radius: 6px 6px 0 0; }
-          .wi-cover-back {
-            transform: rotateX(-180deg);
-            border-radius: 0 0 6px 6px;
-          }
-          .wi-cover-front { padding: 18px 20px; gap: 0; }
-          .wi-cover-edition { font-size: 9px; }
-          .wi-cover-masthead { font-size: 20px; margin: 4px 0; }
-          .wi-cover-date { font-size: 10px; }
-          .wi-cover-rule { margin: 5px 0; }
-          .wi-cover-headline { font-size: 36px; margin: 4px 0 8px; }
-          .wi-photo-frame { flex: 1; width: 94%; min-height: 0; aspect-ratio: unset; }
-          .wi-cover-byline { font-size: 9px; margin-top: 8px; }
-          .wi-back-wm-logo { font-size: 32px; }
-          .wi-back-wm-text { font-size: 13px; }
-          .wi-controls { margin-bottom: 1.25rem; }
-          .wi-btn { font-size: 1rem; padding: 0.6rem 1.6rem; }
-          .wi-hint { font-size: 0.9rem; margin-top: 1rem; }
-        }
-      `}</style>
+    let err
+    if (editing) {
+      ;({ error: err } = await supabase.from('sng_tables').update(payload).eq('id', editing.id))
+    } else {
+      ;({ error: err } = await supabase.from('sng_tables').insert(payload))
+    }
 
-      <div className="wi-scene">
-        <div className="wi-controls">
-          <button
-            className={`wi-btn${!isOpen ? " active" : ""}`}
-            onClick={() => setIsOpen(false)}
-          >
-            Closed
-          </button>
-          <button
-            className={`wi-btn${isOpen ? " active" : ""}`}
-            onClick={() => setIsOpen(true)}
-          >
-            Open
-          </button>
+    setSaving(false)
+    if (err) { setError(err.message); return }
+    setForm(defaultForm)
+    setEditing(null)
+    setShowForm(false)
+    fetchData()
+  }
+
+  function openEdit(t: WeddingTable) {
+    setEditing(t)
+    setForm({
+      table_number: String(t.table_number),
+      table_name:   t.table_name ?? '',
+      capacity:     String(t.capacity),
+      shape:        t.shape,
+      notes:        t.notes ?? '',
+    })
+    setShowForm(true)
+    setSelected(null)
+  }
+
+  async function deleteTable(id: number) {
+    if (!confirm('Delete this table? Invitees assigned to it will need reassignment.')) return
+    const { error: err } = await supabase.from('sng_tables').delete().eq('id', id)
+    if (err) setError(err.message)
+    else { setSelected(null); fetchData() }
+  }
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-amber-50">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-rose-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-rose-700" style={{ fontFamily: 'Georgia, serif' }}>
+              💐 Wedding Tables
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {tables.length} tables · {invitees.length} invitees assigned
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* view toggle */}
+            <div className="flex rounded-lg overflow-hidden border border-rose-200 text-sm font-semibold">
+              {(['map', 'list'] as ViewMode[]).map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-4 py-1.5 transition-colors ${view === v
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-white text-slate-600 hover:bg-rose-50'}`}>
+                  {v === 'map' ? '🗺 Venue' : '📋 List'}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => { setEditing(null); setForm(defaultForm); setShowForm(s => !s) }}
+              className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold shadow transition-colors"
+            >
+              + Add Table
+            </button>
+          </div>
         </div>
+      </header>
 
-        <div className="wi-perspective">
-          <div className="wi-card">
-            {/* ── Inside LEFT panel ── */}
-            <div className="wi-panel wi-panel-left">
-              <div className="wi-inside-hdr ">
-                Wedding Daily · Special Edition
-              </div>
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            ⚠️ {error}
+          </div>
+        )}
 
-              <div className="wi-gold-rule">
-                <div className="wi-gold-line" />
-                <span className="wi-heart">♥</span>
-                <div className="wi-gold-line" />
-              </div>
-
-              <div className="wi-names">
-                Grace Mutunda
-                <span className="wi-amp">&amp;</span>
-                Steve Ndemba
-              </div>
-
-              <div className="wi-gold-rule">
-                <div className="wi-gold-line" />
-                <span className="wi-heart">♥</span>
-                <div className="wi-gold-line" />
-              </div>
-
-              <div className="wi-invite-label">
-                Mr / Mme / Couple :{" "}
-                <span className="underline">{invitee.fullName}</span>
-              </div>
-
-              <div className="wi-invite-body">
-                C&apos;est avec beaucoup de joie,
-                <br />
-                d&apos;amour et d&apos;estime
-                <br />
-                que les familles
-                <br />
-                <strong>Émile Mutunda</strong> et
-                <br />
-                <strong>Jean-Robert Ndemba</strong>
-                <br />
-                vous convient au mariage de
-                <br />
-                leurs enfants
-              </div>
-
-              <div className="wi-date-block">
-                <span className="wi-date-label">Le Samedi</span>
-                <span className="wi-date-main">06 Juin 2026</span>
-                <span className="wi-date-venue">à Kolwezi.</span>
-              </div>
-
-              <div className="wi-gold-rule" style={{ marginTop: "4px" }}>
-                <div className="wi-gold-line" />
-                <span className="wi-heart" style={{ fontSize: "8px" }}>
-                  ✦
-                </span>
-                <div className="wi-gold-line" />
-              </div>
-            </div>
-
-            {/* ── Inside RIGHT panel ── */}
-            <div className="wi-panel wi-panel-right">
-              {/*  <div className=" flex justify-center items-center fixed bottom-2 right-2 ">
-                <Image
-                  alt="Qr"
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${invitee.id}`}
-                  style={{ objectFit: "cover", objectPosition: "center top" }}
-                 
-                  width={45}
-                  height={45}
-                />
-              </div> */}
-
-              {/*  <div className="absolute bottom-3 right-3 bg-white p-2 rounded-lg shadow-md">
-                <QRCode
-                  size={60}
-                  value={`${baseUrl}/invitee/info?id=${invitee.id}`}
-                />
-                <p className="text-[8px] text-center mt-1 text-gray-500">
-                  Scan RSVP
-                </p>
-              </div> */}
-
-              <div className="wi-photo-frame">
-                <Image
-                  src="/right.jpeg"
-                  alt="Wedding photo"
-                  fill
-                  style={{ objectFit: "cover", objectPosition: "center top" }}
-                  sizes="(max-width: 600px) 58vw, 200px"
+        {/* ── Add / Edit Form ── */}
+        {showForm && (
+          <div className="mb-6 bg-white rounded-2xl shadow-md border border-rose-100 p-6">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">
+              {editing ? '✏️ Edit Table' : '➕ New Table'}
+            </h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Table #</label>
+                <input type="number" required min={1}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  value={form.table_number}
+                  onChange={e => setForm(f => ({ ...f, table_number: e.target.value }))}
                 />
               </div>
-
-              <div className="wi-verse">
-                &ldquo;Ce que Dieu a uni,
-                <br />
-                que l&apos;homme ne le sépare pas.&rdquo;
-                <br />— Marc 10 : 9
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Name (optional)</label>
+                <input type="text"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  value={form.table_name}
+                  onChange={e => setForm(f => ({ ...f, table_name: e.target.value }))}
+                  placeholder="e.g. Table des Mariés"
+                />
               </div>
-
-              <div className="wi-ornament">✦ ❧ ✦</div>
-            </div>
-
-            {/* ── Front cover flap ── */}
-            <div className={`wi-flap${isOpen ? " open" : ""}`}>
-              <div className="wi-cover-front">
-                <div className="wi-cborder" />
-                <div className="wi-cborder-inner" />
-
-                <span className="wi-cover-edition">
-                  Our Special Edition · A Love Story Worth Celebrating
-                </span>
-                <div className="wi-cover-rule" />
-                <div className="wi-cover-masthead">The Big News</div>
-                <div className="wi-cover-rule" />
-                <span className="wi-cover-date">06.06.2026</span>
-
-                <div className="wi-cover-headline flex justify-center">
-                  Wedding Daily
-                </div>
-
-                <div className="wi-photo-frame">
-                  <Image
-                    src="/front.jpeg"
-                    alt="Wedding photo"
-                    fill
-                    style={{ objectFit: "cover", objectPosition: "center top" }}
-                    sizes="(max-width: 600px) 58vw, 200px"
-                  />
-                </div>
-
-                <div className="wi-cover-byline">
-                  Grace Mutunda &amp; Steve Ndemba
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Capacity</label>
+                <input type="number" required min={2} max={30}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  value={form.capacity}
+                  onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))}
+                />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Shape</label>
+                <select
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  value={form.shape}
+                  onChange={e => setForm(f => ({ ...f, shape: e.target.value as TableShape }))}
+                >
+                  <option value="round">⭕ Round</option>
+                  <option value="rectangular">🔲 Rectangular</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Notes</label>
+                <input type="text"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  value={form.notes}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Optional notes…"
+                />
+              </div>
+              <div className="col-span-2 md:col-span-3 flex gap-3 justify-end pt-2">
+                <button type="button"
+                  onClick={() => { setShowForm(false); setEditing(null) }}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving}
+                  className="px-6 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold shadow disabled:opacity-50 transition-colors">
+                  {saving ? 'Saving…' : editing ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
-              <div className="wi-cover-back">
-                <div className="wi-back-wm">
-                  <div className="wi-back-wm-logo">WD</div>
-                  <div className="wi-back-wm-line" />
-                  <div className="wi-back-wm-text">
-                    Wedding Daily
-                    <br />
-                    06.06.2026
+        {loading ? (
+          <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+            <span className="animate-pulse">✨ Loading tables…</span>
+          </div>
+        ) : (
+          <>
+            {/* ── MAP VIEW ── */}
+            {view === 'map' && (
+              <div className="flex gap-6 flex-col lg:flex-row">
+                {/* Venue floor plan */}
+                <div className="flex-1">
+                  <div className="bg-white rounded-2xl shadow-md border border-rose-100 p-4">
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mb-4 text-xs">
+                      <span className="font-bold text-slate-600">Seat colours:</span>
+                      {(Object.entries(STATUS_COLOUR) as [InviteeStatus, string][]).map(([s, c]) => (
+                        <span key={s} className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-full inline-block" style={{ background: c }} />
+                          {s}
+                        </span>
+                      ))}
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full inline-block bg-slate-200" />
+                        Empty
+                      </span>
+                      <span className="flex items-center gap-1.5 ml-auto">
+                        <span className="w-3 h-3 rounded-full inline-block border-2 border-green-500 bg-transparent" />
+                        Confirmed
+                      </span>
+                    </div>
+
+                    {/* Venue area */}
+                    <div className="relative bg-gradient-to-b from-emerald-50 to-teal-50 rounded-xl border-2 border-dashed border-teal-200 p-4 min-h-[520px]">
+                      {/* Dance floor indicator */}
+                      <div className="absolute inset-x-1/3 top-4 bottom-4 rounded-full border-2 border-dashed border-teal-300/60 flex items-center justify-center pointer-events-none">
+                        <span className="text-teal-400/70 text-xs font-semibold rotate-0 select-none">💃 Dance Floor</span>
+                      </div>
+
+                      {/* Entrance */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-3 bg-amber-100 border border-amber-300 rounded-t-lg px-4 py-0.5 text-xs font-semibold text-amber-700 z-10">
+                        🚪 Entrance
+                      </div>
+
+                      {/* Tables grid */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 relative z-10">
+                        {tables.map(t => {
+                          const seated = byTable[t.table_number] ?? []
+                          const isSel  = selected?.id === t.id
+                          return (
+                            <div key={t.id}
+                              onClick={() => setSelected(isSel ? null : t)}
+                              className={`cursor-pointer rounded-xl p-2 transition-all ${
+                                isSel
+                                  ? 'ring-2 ring-rose-500 bg-rose-50 shadow-lg scale-105'
+                                  : 'hover:bg-white/60 hover:shadow'
+                              }`}
+                            >
+                              <div className="w-full aspect-square">
+                                {t.shape === 'round'
+                                  ? <RoundTableViz table={t} invitees={seated} />
+                                  : <RectTableViz  table={t} invitees={seated} />
+                                }
+                              </div>
+                              <div className="mt-1 text-center">
+                                <p className="text-xs font-bold text-slate-700 truncate leading-tight">
+                                  {t.table_name ?? `Table ${t.table_number}`}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {seated.length}/{t.capacity}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table detail sidebar */}
+                <div className="lg:w-72 flex-shrink-0">
+                  {selected ? (
+                    <div className="bg-white rounded-2xl shadow-md border border-rose-100 p-5 sticky top-24">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-black text-lg text-slate-800">
+                            {selected.table_name ?? `Table ${selected.table_number}`}
+                          </h3>
+                          <p className="text-xs text-slate-400">
+                            #{selected.table_number} · {selected.shape} · {selected.capacity} seats
+                          </p>
+                        </div>
+                        <button onClick={() => setSelected(null)} className="text-slate-300 hover:text-slate-500 text-lg">✕</button>
+                      </div>
+
+                      {selected.notes && (
+                        <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 mb-3 italic">
+                          {selected.notes}
+                        </p>
+                      )}
+
+                      {/* Occupancy bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs text-slate-500 mb-1">
+                          <span>Occupancy</span>
+                          <span>
+                            {(byTable[selected.table_number] ?? []).length} / {selected.capacity}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all"
+                            style={{ width: `${Math.min(100, ((byTable[selected.table_number] ?? []).length / selected.capacity) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Invitees list */}
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Guests</h4>
+                      <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                        {(byTable[selected.table_number] ?? []).length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">No guests assigned yet.</p>
+                        ) : (
+                          (byTable[selected.table_number] ?? []).map(inv => (
+                            <div key={inv.id}
+                              className="flex items-center gap-2 text-xs bg-slate-50 rounded-lg px-2.5 py-1.5">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ background: STATUS_COLOUR[inv.status] }} />
+                              <span className="font-semibold text-slate-700 flex-1 truncate">{inv.full_name}</span>
+                              <span className="text-slate-400">{inv.status}</span>
+                              {inv.confirmed && <span className="text-green-500" title="Confirmed">✓</span>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <button onClick={() => openEdit(selected)}
+                          className="flex-1 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteTable(selected.id)}
+                          className="flex-1 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors">
+                          🗑 Delete
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/60 rounded-2xl border border-dashed border-rose-200 p-6 text-center sticky top-24">
+                      <p className="text-4xl mb-2">🌹</p>
+                      <p className="text-sm text-slate-500">Click a table in the venue<br />to see its details</p>
+                    </div>
+                  )}
+
+                  {/* Stats */}
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Tables',    value: tables.length,                          icon: '🪑' },
+                      { label: 'Total Seats', value: tables.reduce((s,t) => s+t.capacity,0), icon: '💺' },
+                      { label: 'Seated',    value: invitees.length,                        icon: '👥' },
+                      { label: 'Confirmed', value: invitees.filter(i=>i.confirmed).length, icon: '✅' },
+                    ].map(s => (
+                      <div key={s.label} className="bg-white rounded-xl shadow-sm border border-rose-50 p-3 text-center">
+                        <div className="text-lg">{s.icon}</div>
+                        <div className="text-xl font-black text-slate-800">{s.value}</div>
+                        <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">{s.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-        <p className="wi-hint">
-          {isOpen
-            ? "The invitation is open — all details inside"
-            : 'Click "Open" to unfold the invitation'}
-        </p>
-        <p className=" flex space-x-2 mt-2 ring-0  ">
-          <span>Copyright &copy; 2026 DayOne </span>
-          <Image
-            alt="DayOne"
-            src={"/dayone.jpg"}
-            width={102 * 0.75}
-            height={40 * 0.75}
-          />{" "}
-        </p>
+            {/* ── LIST VIEW ── */}
+            {view === 'list' && (
+              <div className="space-y-4">
+                {tables.length === 0 && (
+                  <div className="text-center py-20 text-slate-400">
+                    <p className="text-5xl mb-3">🌸</p>
+                    <p>No tables yet. Add one above!</p>
+                  </div>
+                )}
+                {tables.map(t => {
+                  const seated = byTable[t.table_number] ?? []
+                  return (
+                    <div key={t.id}
+                      className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center font-black text-rose-600 text-lg">
+                            {t.table_number}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-slate-800">
+                              {t.table_name ?? `Table ${t.table_number}`}
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                              {t.shape === 'round' ? '⭕' : '🔲'} {t.shape} · {seated.length}/{t.capacity} guests
+                              {t.notes && ` · ${t.notes}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => openEdit(t)}
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold transition-colors">
+                            Edit
+                          </button>
+                          <button onClick={() => deleteTable(t.id)}
+                            className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
 
-        <div className=" mt-4 bg-white p-2 rounded-lg shadow-md">
-          <QRCode
-            size={80}
-            value={`${baseUrl}/invitee/info?id=${invitee.id}`}
-          />
-          <p className="text-[8px] text-center mt-1 text-gray-500">Scan RSVP</p>
-        </div>
-      </div>
-    </>
-  );
-}
+                      {/* Occupancy bar */}
+                      <div className="px-5 pt-3 pb-1">
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (seated.length / t.capacity) * 100)}%` }} />
+                        </div>
+                      </div>
 
-// ── Default export wraps inner component in Suspense ──
-export default function WeddingInvitation() {
-  return (
-    <Suspense fallback={null}>
-      <WeddingInvitationInner />
-    </Suspense>
-  );
+                      {/* Invitee chips */}
+                      {seated.length > 0 && (
+                        <div className="px-5 pb-4 pt-3 flex flex-wrap gap-1.5">
+                          {seated.map(inv => (
+                            <span key={inv.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm"
+                              style={{ background: STATUS_COLOUR[inv.status] }}>
+                              {inv.full_name}
+                              {inv.confirmed && <span className="opacity-80">✓</span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {seated.length === 0 && (
+                        <p className="px-5 py-3 text-xs text-slate-400 italic">No guests assigned.</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  )
 }
