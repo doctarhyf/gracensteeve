@@ -61,7 +61,18 @@ export type TInvitee = {
   // Metadata
   createdAt?: Date;
 
-  status: "Mr." | "Mme" | "Couple";
+  status: TInviteeStatus;
+
+  family: TFamily;
 };
 
-export type TInviteeStatus = "Mr." | "Mme" | "Couple";
+export type TInviteeStatus =
+  | "Mr."
+  | "Mme."
+  | "Couple"
+  | "Dr."
+  | "Maman"
+  | "Honorable"
+  | "Pasteur";
+
+export type TFamily = "NDEMBA" | "MUTUNDA";
