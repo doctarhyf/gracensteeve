@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Heart, Search } from "lucide-react";
+import { Heart, Search, Pencil, Copy, Check, X } from "lucide-react";
 import { TInvitee } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { TABLE_NAMES } from "@/lib/consts";
@@ -20,6 +20,11 @@ export default function InviteesTable() {
   const [search, setSearch] = useState("");
   const [familyFilter, setFamilyFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingInvitee, setEditingInvitee] = useState<TInvitee | null>(null);
+  const [editForm, setEditForm] = useState<Partial<TInvitee>>({});
+  const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sngTables, setSngTables] = useState<Record<string, any>[]>([]);
   const router = useRouter();
 
   // FETCH
@@ -57,7 +62,32 @@ export default function InviteesTable() {
 
   useEffect(() => {
     loadInvitees();
+    loadSngTables();
   }, []);
+
+  const loadSngTables = async () => {
+    const { data, error } = await supabase
+      .from("sng_tables")
+      .select("*")
+      .order("table_number", { ascending: true });
+
+    if (error) {
+      // try without ordering if column name differs
+      const { data: data2, error: error2 } = await supabase
+        .from("sng_tables")
+        .select("*");
+
+      if (error2) {
+        console.error("sng_tables fetch error:", error2);
+        return;
+      }
+
+      setSngTables(data2 || []);
+      return;
+    }
+
+    setSngTables(data || []);
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -89,6 +119,52 @@ export default function InviteesTable() {
     }
 
     setInvitees((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  // EDIT
+  const openEdit = (invitee: TInvitee) => {
+    setEditingInvitee(invitee);
+    setEditForm({ ...invitee });
+  };
+
+  const saveEdit = async () => {
+    if (!editingInvitee) return;
+    setSaving(true);
+
+    const { error } = await supabase
+      .from(TABLE_NAMES.INVITEES)
+      .update({
+        full_name: editForm.fullName,
+        table_number: editForm.tableNumber,
+        seat_number: editForm.seatNumber,
+        phone_number: editForm.phoneNumber,
+        family: editForm.family,
+        status: editForm.status,
+        confirmed: editForm.confirmed,
+      })
+      .eq("id", editingInvitee.id);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to update invitee.");
+      setSaving(false);
+      return;
+    }
+
+    setInvitees((prev) =>
+      prev.map((i) =>
+        i.id === editingInvitee.id ? { ...i, ...editForm } : i,
+      ),
+    );
+    setEditingInvitee(null);
+    setSaving(false);
+  };
+
+  // COPY LINK
+  const copyLink = (id: string) => {
+    navigator.clipboard.writeText(`https://gracensteeve.vercel.app/?id=${id}`);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   // FILTER
@@ -330,12 +406,42 @@ export default function InviteesTable() {
                       </td> */}
 
                       <td className="px-6 py-5">
-                        <button
-                          onClick={() => deleteInvitee(invitee.id)}
-                          className="px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-sm font-semibold"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEdit(invitee);
+                            }}
+                            className="px-3 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-sm font-semibold flex items-center gap-1"
+                          >
+                            <Pencil size={13} />
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyLink(invitee.id);
+                            }}
+                            className="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold flex items-center gap-1"
+                          >
+                            {copiedId === invitee.id ? (
+                              <><Check size={13} /> Copied</>
+                            ) : (
+                              <><Copy size={13} /> Link</>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteInvitee(invitee.id);
+                            }}
+                            className="px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-sm font-semibold"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -372,6 +478,141 @@ export default function InviteesTable() {
           )}
         </div>
       </div>
+
+      {/* EDIT MODAL */}
+      {editingInvitee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-[#f8f3ea] border border-[#d6c8a8] rounded-3xl shadow-2xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-8 py-6 border-b border-[#e5d8bc]">
+              <h2 className="text-2xl font-serif italic text-[#c49a1d]">Edit Invitee</h2>
+              <button
+                onClick={() => setEditingInvitee(null)}
+                className="text-[#9d8453] hover:text-[#7a6340]"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-8 py-6 grid grid-cols-2 gap-4">
+              {/* Full Name */}
+              <div className="col-span-2">
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Full Name</label>
+                <input
+                  value={editForm.fullName || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                />
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Status</label>
+                <select
+                  value={editForm.status || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                >
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mme.">Mme.</option>
+                  <option value="Couple">Couple</option>
+                  <option value="Dr.">Dr.</option>
+                  <option value="Maman">Maman</option>
+                  <option value="Honorable">Honorable</option>
+                  <option value="Pasteur">Pasteur</option>
+                </select>
+              </div>
+
+              {/* Family */}
+              <div>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Family</label>
+                <select
+                  value={editForm.family || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, family: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                >
+                  <option value="">Select family</option>
+                  <option value="NDEMBA">NDEMBA</option>
+                  <option value="MUTUNDA">MUTUNDA</option>
+                </select>
+              </div>
+
+              {/* Table Number */}
+              <div>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Table</label>
+                <select
+                  value={String(editForm.tableNumber ?? "")}
+                  onChange={(e) => setEditForm((f) => ({ ...f, tableNumber: Number(e.target.value) }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                >
+                  <option value="">Select table</option>
+                  {sngTables.map((t) => {
+                    const num = t.table_number ?? t.number ?? t.id;
+                    const label = t.name
+                      ? `Table ${num} — ${t.name}`
+                      : `Table ${num}`;
+                    return (
+                      <option key={t.id} value={String(num)}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Seat Number */}
+              <div>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Seat Number</label>
+                <input
+                  value={editForm.seatNumber || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, seatNumber: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="col-span-2">
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Phone Number</label>
+                <input
+                  value={editForm.phoneNumber || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+                />
+              </div>
+
+              {/* RSVP */}
+              <div className="col-span-2 flex items-center gap-3">
+                <input
+                  id="confirmed"
+                  type="checkbox"
+                  checked={editForm.confirmed || false}
+                  onChange={(e) => setEditForm((f) => ({ ...f, confirmed: e.target.checked }))}
+                  className="w-4 h-4 accent-[#c9ae6a]"
+                />
+                <label htmlFor="confirmed" className="text-sm text-[#7a6340]">Confirmed (RSVP)</label>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 px-8 py-5 border-t border-[#e5d8bc]">
+              <button
+                onClick={() => setEditingInvitee(null)}
+                className="px-5 py-2.5 rounded-xl border border-[#d6c8a8] text-[#7a6340] hover:bg-[#efe7d3] text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="px-5 py-2.5 rounded-xl bg-[#c9ae6a] text-white hover:bg-[#b59a55] text-sm font-semibold disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
