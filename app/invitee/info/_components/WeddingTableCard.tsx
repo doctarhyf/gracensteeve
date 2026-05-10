@@ -60,7 +60,17 @@ export default function WeddingTableCard({ invitee }: Props) {
                         </td>
 
                         <td className="px-5 py-4 text-[#4b3d29]">
-                          {invitee.fullName}
+                          {invitee.status} {invitee.fullName}
+                        </td>
+                      </tr>
+
+                      <tr className="border-b border-[#e5d8bc]">
+                        <td className="px-5 py-4 font-semibold text-[#7a6340] w-1/3">
+                          Phone
+                        </td>
+
+                        <td className="px-5 py-4 text-[#4b3d29]">
+                          {invitee.phoneNumber}
                         </td>
                       </tr>
 

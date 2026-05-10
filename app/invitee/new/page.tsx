@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Heart } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
-import { TInvitee, TInviteeStatus } from "@/lib/types";
+import { TFamily, TInvitee, TInviteeStatus } from "@/lib/types";
 import { TABLE_NAMES } from "@/lib/consts";
 
 const supabase = createClient(
@@ -29,6 +29,7 @@ const BLANK_INVITEE: TInvitee = {
   confirmed: true,
   createdAt: new Date(),
   status: "Couple",
+  family: "MUTUNDA",
 };
 
 export default function InviteeForm() {
@@ -55,7 +56,10 @@ export default function InviteeForm() {
         setTables(data ?? []);
         // pre-select the first table if available
         if (data && data.length > 0) {
-          setInvitee((prev) => ({ ...prev, tableNumber: data[0].table_number }));
+          setInvitee((prev) => ({
+            ...prev,
+            tableNumber: data[0].table_number,
+          }));
         }
       }
       setTablesLoading(false);
@@ -81,7 +85,9 @@ export default function InviteeForm() {
     }));
   };
 
-  const selectedTable = tables.find((t) => t.table_number === invitee.tableNumber);
+  const selectedTable = tables.find(
+    (t) => t.table_number === invitee.tableNumber,
+  );
 
   const handleSubmit = async () => {
     try {
@@ -149,7 +155,9 @@ export default function InviteeForm() {
             <input
               type="text"
               value={invitee.fullName}
-              onChange={(e) => setInvitee({ ...invitee, fullName: e.target.value })}
+              onChange={(e) =>
+                setInvitee({ ...invitee, fullName: e.target.value })
+              }
               placeholder="Franvale Mutunda"
               className="w-full rounded-xl border border-[#d9c9a3] bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-[#c9ae6a]"
             />
@@ -163,13 +171,33 @@ export default function InviteeForm() {
             <select
               value={invitee.status}
               onChange={(e) =>
-                setInvitee({ ...invitee, status: e.target.value as TInviteeStatus })
+                setInvitee({
+                  ...invitee,
+                  status: e.target.value as TInviteeStatus,
+                })
               }
               className="w-full rounded-xl border border-[#d9c9a3] bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-[#c9ae6a]"
             >
               <option value="Mr.">Mr.</option>
               <option value="Mme.">Mme.</option>
               <option value="Couple">Couple</option>
+            </select>
+          </div>
+
+          {/* Family */}
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-[#7a6340]">
+              Family
+            </label>
+            <select
+              value={invitee.family}
+              onChange={(e) =>
+                setInvitee({ ...invitee, family: e.target.value as TFamily })
+              }
+              className="w-full rounded-xl border border-[#d9c9a3] bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+            >
+              <option value="MUTUNDA">Famille MUTUNDA</option>
+              <option value="NDEMDA">Famille NDEMBA</option>
             </select>
           </div>
 
@@ -193,13 +221,17 @@ export default function InviteeForm() {
                 <select
                   value={invitee.tableNumber}
                   onChange={(e) =>
-                    setInvitee({ ...invitee, tableNumber: Number(e.target.value) })
+                    setInvitee({
+                      ...invitee,
+                      tableNumber: Number(e.target.value),
+                    })
                   }
                   className="w-full rounded-xl border border-[#d9c9a3] bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 >
                   {tables.map((t) => (
                     <option key={t.id} value={t.table_number}>
-                      #{t.table_number}{t.table_name ? ` — ${t.table_name}` : ""}
+                      #{t.table_number}
+                      {t.table_name ? ` — ${t.table_name}` : ""}
                     </option>
                   ))}
                 </select>
@@ -245,7 +277,9 @@ export default function InviteeForm() {
             <input
               type="text"
               value={invitee.phoneNumber}
-              onChange={(e) => setInvitee({ ...invitee, phoneNumber: e.target.value })}
+              onChange={(e) =>
+                setInvitee({ ...invitee, phoneNumber: e.target.value })
+              }
               placeholder="+243..."
               className="w-full rounded-xl border border-[#d9c9a3] bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-[#c9ae6a]"
             />

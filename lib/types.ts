@@ -52,7 +52,7 @@ export type TInvitee = {
 
   // Optional extras
   phoneNumber?: string;
-  seatNumber?: number;
+  seatNumber: number;
   qrCode?: string;
 
   // RSVP

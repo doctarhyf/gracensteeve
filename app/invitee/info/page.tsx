@@ -34,6 +34,7 @@ async function getInvitee(id: string): Promise<TInvitee | null> {
     confirmed: data.confirmed,
     createdAt: data.created_at,
     status: data.status,
+    family: data.family,
   };
 }
 

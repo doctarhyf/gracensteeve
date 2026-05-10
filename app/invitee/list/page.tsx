@@ -47,6 +47,7 @@ export default function InviteesTable() {
       confirmed: item.confirmed,
       createdAt: item.created_at,
       status: item.status,
+      family: item.family,
     }));
 
     setInvitees(formatted);
@@ -103,7 +104,7 @@ export default function InviteesTable() {
     return {
       total: filteredInvitees.length,
       mr: filteredInvitees.filter((i) => i.status === "Mr.").length,
-      mme: filteredInvitees.filter((i) => i.status === "Mme").length,
+      mme: filteredInvitees.filter((i) => i.status === "Mme.").length,
       couple: filteredInvitees.filter((i) => i.status === "Couple").length,
     };
   }, [filteredInvitees]);
@@ -180,16 +181,16 @@ export default function InviteesTable() {
 
           {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px]">
+            <table className="w-full min-w-275">
               <thead>
                 <tr className="bg-[#efe7d3] text-left">
+                  <th className="px-6 py-5">Status</th>
                   <th className="px-6 py-5">Guest</th>
                   <th className="px-6 py-5">Table</th>
                   <th className="px-6 py-5">Seat</th>
                   <th className="px-6 py-5">Phone</th>
                   <th className="px-6 py-5">RSVP</th>
-                  <th className="px-6 py-5">Table Mates</th>
-                  <th className="px-6 py-5">QR Code</th>
+
                   <th className="px-6 py-5">Actions</th>
                 </tr>
               </thead>
@@ -217,6 +218,10 @@ export default function InviteesTable() {
                       }
                     >
                       <td className="px-6 py-5 font-semibold">
+                        {invitee.status}
+                      </td>
+
+                      <td className="px-6 py-5 font-semibold">
                         {invitee.fullName}
                       </td>
 
@@ -232,7 +237,7 @@ export default function InviteesTable() {
                         {invitee.confirmed ? "Confirmed" : "Pending"}
                       </td>
 
-                      <td className="px-6 py-5">
+                      {/*  <td className="px-6 py-5">
                         {invitee.tableMates?.join(", ") || "—"}
                       </td>
 
@@ -246,7 +251,7 @@ export default function InviteesTable() {
                         ) : (
                           "—"
                         )}
-                      </td>
+                      </td> */}
 
                       <td className="px-6 py-5">
                         <button
