@@ -566,7 +566,7 @@ export default function InviteesTable() {
                 <label className="text-xs uppercase text-[#7a6340] mb-1 block">Seat Number</label>
                 <input
                   value={editForm.seatNumber || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, seatNumber: e.target.value }))}
+                  onChange={(e) => setEditForm((f) => ({ ...f, seatNumber: Number(e.target.value) }))}
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 />
               </div>
