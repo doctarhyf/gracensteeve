@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import WeddingTableCard from "./_components/WeddingTableCard";
 import { TInvitee } from "@/lib/types";
 import { createClient } from "@supabase/supabase-js";
+import { TABLE_NAMES } from "@/lib/consts";
 
 // Supabase client
 const supabase = createClient(
@@ -12,7 +13,7 @@ const supabase = createClient(
 // Server fetch function
 async function getInvitee(id: string): Promise<TInvitee | null> {
   const { data, error } = await supabase
-    .from("invitees")
+    .from(TABLE_NAMES.INVITEES)
     .select("*")
     .eq("id", id)
     .single();

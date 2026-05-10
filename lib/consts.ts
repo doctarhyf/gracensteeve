@@ -1,3 +1,4 @@
 export const TABLE_NAMES = {
-  INVITEES: "invitees",
+  INVITEES: "sng_invitees",
+  TABLES: "sng_tables",
 };

@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Heart, Search } from "lucide-react";
 import { TInvitee } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { TABLE_NAMES } from "@/lib/consts";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +26,7 @@ export default function InviteesTable() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from("invitees")
+      .from(TABLE_NAMES.INVITEES)
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -68,7 +69,10 @@ export default function InviteesTable() {
 
     if (!confirmDelete) return;
 
-    const { error } = await supabase.from("invitees").delete().eq("id", id);
+    const { error } = await supabase
+      .from(TABLE_NAMES.INVITEES)
+      .delete()
+      .eq("id", id);
 
     if (error) {
       console.error(error);
