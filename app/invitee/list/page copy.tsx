@@ -18,7 +18,6 @@ export default function InviteesTable() {
   const [invitees, setInvitees] = useState<TInvitee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [familyFilter, setFamilyFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
@@ -61,13 +60,7 @@ export default function InviteesTable() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, familyFilter]);
-
-  // UNIQUE FAMILIES
-  const families = useMemo(() => {
-    const set = new Set(invitees.map((i) => i.family).filter(Boolean));
-    return Array.from(set).sort();
-  }, [invitees]);
+  }, [search]);
 
   // DELETE
   const deleteInvitee = async (id: string) => {
@@ -93,38 +86,26 @@ export default function InviteesTable() {
 
   // FILTER
   const filteredInvitees = useMemo(() => {
-    let result = invitees;
+    if (!search.trim()) return invitees;
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((i) => {
-        return (
-          i.fullName?.toLowerCase().includes(q) ||
-          i.phoneNumber?.toLowerCase().includes(q) ||
-          String(i.tableNumber).includes(q)
-        );
-      });
-    }
+    const q = search.toLowerCase();
 
-    if (familyFilter) {
-      result = result.filter((i) => i.family === familyFilter);
-    }
-
-    return result;
-  }, [search, familyFilter, invitees]);
+    return invitees.filter((i) => {
+      return (
+        i.fullName?.toLowerCase().includes(q) ||
+        i.phoneNumber?.toLowerCase().includes(q) ||
+        String(i.tableNumber).includes(q)
+      );
+    });
+  }, [search, invitees]);
 
   // STATS
   const stats = useMemo(() => {
-    const byFamily: Record<string, number> = {};
-    for (const i of filteredInvitees) {
-      if (i.family) byFamily[i.family] = (byFamily[i.family] || 0) + 1;
-    }
     return {
       total: filteredInvitees.length,
       mr: filteredInvitees.filter((i) => i.status === "Mr.").length,
       mme: filteredInvitees.filter((i) => i.status === "Mme.").length,
       couple: filteredInvitees.filter((i) => i.status === "Couple").length,
-      byFamily,
     };
   }, [filteredInvitees]);
 
@@ -158,33 +139,18 @@ export default function InviteesTable() {
               </h1>
             </div>
 
-            {/* SEARCH + FAMILY FILTER */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative w-full md:w-[320px]">
-                <Search
-                  className="absolute left-3 top-3 text-[#9d8453]"
-                  size={18}
-                />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search name, phone, table..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
-                />
-              </div>
-
-              <select
-                value={familyFilter}
-                onChange={(e) => setFamilyFilter(e.target.value)}
-                className="w-full sm:w-[180px] px-4 py-3 rounded-xl border bg-white text-[#7a6340] outline-none focus:ring-2 focus:ring-[#c9ae6a] cursor-pointer"
-              >
-                <option value="">All families</option>
-                {families.map((family) => (
-                  <option key={family} value={family}>
-                    {family}
-                  </option>
-                ))}
-              </select>
+            {/* SEARCH */}
+            <div className="relative w-full md:w-[320px]">
+              <Search
+                className="absolute left-3 top-3 text-[#9d8453]"
+                size={18}
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name, phone, table..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
+              />
             </div>
           </div>
 
@@ -211,43 +177,6 @@ export default function InviteesTable() {
                 <p className="text-2xl font-bold">{stats.couple}</p>
               </div>
             </div>
-
-            {/* FAMILY BREAKDOWN */}
-            {Object.keys(stats.byFamily).length > 0 && (
-              <div className="mt-4 bg-white border border-[#e5d8bc] rounded-2xl p-4">
-                <p className="text-xs text-[#7a6340] uppercase mb-3">By Family</p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(stats.byFamily)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([family, count]) => (
-                      <button
-                        key={family}
-                        onClick={() =>
-                          setFamilyFilter((prev) =>
-                            prev === family ? "" : family,
-                          )
-                        }
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-medium transition-colors ${
-                          familyFilter === family
-                            ? "bg-[#c9ae6a] border-[#c9ae6a] text-white"
-                            : "bg-[#fdf9f2] border-[#e5d8bc] text-[#7a6340] hover:border-[#c9ae6a]"
-                        }`}
-                      >
-                        <span>{family}</span>
-                        <span
-                          className={`text-xs px-1.5 py-0.5 rounded-lg font-bold ${
-                            familyFilter === family
-                              ? "bg-white/30 text-white"
-                              : "bg-[#efe7d3] text-[#7a6340]"
-                          }`}
-                        >
-                          {count}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* TABLE */}
