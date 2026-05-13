@@ -33,8 +33,9 @@ export default function InviteeLayout({
           <Link href="/invitee" style={{ fontWeight: "bold" }}>
             Home
           </Link>
-          <Link href="/invitee/list">List</Link>
-          <Link href="/invitee/new">New</Link>
+          <Link href="/invitee/list">List des Invites</Link>
+          <Link href="/invitee/new">Ajounter Un invite</Link>
+          <Link href="/invitee/tables">Gestion de Tables</Link>
         </nav>
       </aside>
 
