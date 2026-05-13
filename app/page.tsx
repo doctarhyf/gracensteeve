@@ -933,7 +933,7 @@ function WeddingInvitationInner() {
                     }
                     onClick={() => onConfirm()}
                   >
-                    Confirm RSVP
+                    Confirmer RSVP
                   </button>
                 )}
 
