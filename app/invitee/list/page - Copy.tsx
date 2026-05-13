@@ -19,7 +19,6 @@ export default function InviteesTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [familyFilter, setFamilyFilter] = useState("");
-  const [confirmedFilter, setConfirmedFilter] = useState<"" | "confirmed" | "pending">("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingInvitee, setEditingInvitee] = useState<TInvitee | null>(null);
   const [editForm, setEditForm] = useState<Partial<TInvitee>>({});
@@ -92,7 +91,7 @@ export default function InviteesTable() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, familyFilter, confirmedFilter]);
+  }, [search, familyFilter]);
 
   // UNIQUE FAMILIES
   const families = useMemo(() => {
@@ -187,14 +186,8 @@ export default function InviteesTable() {
       result = result.filter((i) => i.family === familyFilter);
     }
 
-    if (confirmedFilter === "confirmed") {
-      result = result.filter((i) => i.confirmed === true);
-    } else if (confirmedFilter === "pending") {
-      result = result.filter((i) => !i.confirmed);
-    }
-
     return result;
-  }, [search, familyFilter, confirmedFilter, invitees]);
+  }, [search, familyFilter, invitees]);
 
   // STATS
   const stats = useMemo(() => {
@@ -267,16 +260,6 @@ export default function InviteesTable() {
                     {family}
                   </option>
                 ))}
-              </select>
-
-              <select
-                value={confirmedFilter}
-                onChange={(e) => setConfirmedFilter(e.target.value as "" | "confirmed" | "pending")}
-                className="w-full sm:w-40 px-4 py-3 rounded-xl border bg-white text-[#7a6340] outline-none focus:ring-2 focus:ring-[#c9ae6a] cursor-pointer"
-              >
-                <option value="">All RSVP</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="pending">Pending</option>
               </select>
             </div>
           </div>
