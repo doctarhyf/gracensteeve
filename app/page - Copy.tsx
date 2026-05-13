@@ -28,10 +28,6 @@ function WeddingInvitationInner() {
   const [isOpen, setIsOpen] = useState(false);
   const [invitee, setInvitee] = useState<TInvitee | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showRsvpDialog, setShowRsvpDialog] = useState(false);
-  const [rsvpChoice, setRsvpChoice] = useState<boolean | null>(null);
-  const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
-
 
   useEffect(() => {
     const fetchInvitee = async () => {
@@ -130,24 +126,7 @@ function WeddingInvitationInner() {
   }
 
   function onConfirm() {
-    setRsvpChoice(null);
-    setShowRsvpDialog(true);
-  }
-
-  async function submitRsvp() {
-    if (rsvpChoice === null || !id) return;
-    setRsvpSubmitting(true);
-
-    const { error } = await supabase
-      .from(TABLE_NAMES.INVITEES)
-      .update({ confirmed: rsvpChoice })
-      .eq("id", id);
-
-    if (!error) {
-      setInvitee((prev) => prev ? { ...prev, confirmed: rsvpChoice } : prev);
-      setShowRsvpDialog(false);
-    }
-    setRsvpSubmitting(false);
+    alert("OnConfirm");
   }
 
   return (
@@ -575,195 +554,6 @@ function WeddingInvitationInner() {
           .wi-btn { font-size: 1rem; padding: 0.6rem 1.6rem; }
           .wi-hint { font-size: 0.9rem; margin-top: 1rem; }
         }
-        /* ── RSVP Dialog ── */
-        .rsvp-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(30, 22, 8, 0.55);
-          backdrop-filter: blur(3px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 100;
-          padding: 1rem;
-          animation: rsvp-fade-in 0.3s ease;
-        }
-        @keyframes rsvp-fade-in {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        .rsvp-card {
-          background: #f5f0e6;
-          width: min(480px, 100%);
-          border-radius: 4px;
-          padding: 2.5rem 2.25rem 2rem;
-          position: relative;
-          box-shadow: 0 8px 40px rgba(0,0,0,0.22);
-          animation: rsvp-slide-up 0.35s cubic-bezier(0.34,1.56,0.64,1);
-          font-family: 'Cormorant Garamond', serif;
-        }
-        @keyframes rsvp-slide-up {
-          from { transform: translateY(28px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        /* botanical corner SVG decoration */
-        .rsvp-leaf {
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 130px;
-          pointer-events: none;
-          opacity: 0.85;
-        }
-        .rsvp-border {
-          position: absolute;
-          inset: 10px;
-          border: 0.75px solid rgba(184,150,12,0.35);
-          border-radius: 2px;
-          pointer-events: none;
-        }
-        .rsvp-script {
-          font-family: 'Playfair Display', serif;
-          font-style: italic;
-          font-size: 1.05rem;
-          color: #8a7040;
-          margin-bottom: 0.15rem;
-          display: block;
-        }
-        .rsvp-heading {
-          font-family: 'Playfair Display', serif;
-          font-size: 3.2rem;
-          font-weight: 400;
-          letter-spacing: 0.14em;
-          color: #2a1f0a;
-          line-height: 1;
-          margin-bottom: 0.3rem;
-        }
-        .rsvp-subtitle {
-          font-style: italic;
-          font-size: 1rem;
-          color: #6a5530;
-          letter-spacing: 0.02em;
-          margin-bottom: 1.6rem;
-        }
-        .rsvp-rule {
-          width: 100%;
-          height: 0.5px;
-          background: linear-gradient(90deg, transparent, #b8960c 30%, #b8960c 70%, transparent);
-          opacity: 0.5;
-          margin-bottom: 1.6rem;
-        }
-        .rsvp-options {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          margin-bottom: 1.8rem;
-        }
-        .rsvp-option {
-          display: flex;
-          align-items: center;
-          gap: 0.8rem;
-          cursor: pointer;
-          padding: 0.55rem 0.75rem;
-          border: 0.75px solid rgba(184,150,12,0.25);
-          border-radius: 2px;
-          transition: background 0.2s, border-color 0.2s;
-          background: transparent;
-          font-family: 'Cormorant Garamond', serif;
-          text-align: left;
-        }
-        .rsvp-option:hover {
-          background: rgba(184,150,12,0.07);
-        }
-        .rsvp-option.selected {
-          background: rgba(184,150,12,0.12);
-          border-color: #b8960c;
-        }
-        .rsvp-checkbox {
-          width: 16px;
-          height: 16px;
-          border: 1px solid #b8960c;
-          border-radius: 1px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.2s;
-        }
-        .rsvp-option.selected .rsvp-checkbox {
-          background: #b8960c;
-        }
-        .rsvp-option-text {
-          font-size: 0.85rem;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: #3a2e18;
-        }
-        .rsvp-divider-line {
-          width: 100%;
-          height: 0.5px;
-          background: rgba(140,110,50,0.25);
-          margin-bottom: 1.4rem;
-          border: none;
-        }
-        .rsvp-actions {
-          display: flex;
-          gap: 0.75rem;
-          justify-content: flex-end;
-        }
-        .rsvp-btn-cancel {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.8rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          padding: 0.55rem 1.3rem;
-          border: 0.75px solid rgba(140,110,50,0.4);
-          background: transparent;
-          color: #6a5530;
-          border-radius: 2px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .rsvp-btn-cancel:hover { background: rgba(140,110,50,0.07); }
-        .rsvp-btn-confirm {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.8rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          padding: 0.55rem 1.5rem;
-          background: #2a1f0a;
-          color: #e8dfc8;
-          border: none;
-          border-radius: 2px;
-          cursor: pointer;
-          transition: background 0.2s, opacity 0.2s;
-        }
-        .rsvp-btn-confirm:disabled { opacity: 0.45; cursor: default; }
-        .rsvp-btn-confirm:not(:disabled):hover { background: #3d2e10; }
-
-        /* Done state */
-        .rsvp-done {
-          text-align: center;
-          padding: 0.5rem 0 1rem;
-        }
-        .rsvp-done-icon {
-          font-size: 2.4rem;
-          color: #b8960c;
-          margin-bottom: 0.6rem;
-          display: block;
-        }
-        .rsvp-done-title {
-          font-family: 'Playfair Display', serif;
-          font-style: italic;
-          font-size: 1.6rem;
-          color: #2a1f0a;
-          margin-bottom: 0.4rem;
-        }
-        .rsvp-done-sub {
-          font-style: italic;
-          font-size: 0.95rem;
-          color: #6a5530;
-        }
       `}</style>
 
       <div className="wi-scene">
@@ -915,23 +705,14 @@ function WeddingInvitationInner() {
                   />
                 </div>
 
-                {invitee?.confirmed ? (
-                  <p
-                    className="text-center mx-auto my-2 text-xs uppercase"
-                    style={{ color: "#16a34a", fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.12em", fontWeight: 600 }}
-                  >
-                    ❖ See you there!
-                  </p>
-                ) : (
-                  <button
-                    className={
-                      " bg-emerald-600 mx-auto my-2 text-sm max-w-fit text-emerald-300 rounded-md p-2 cursor-pointer animate-bounce  "
-                    }
-                    onClick={() => onConfirm()}
-                  >
-                    Confirm RSVP
-                  </button>
-                )}
+                <button
+                  className={
+                    " bg-emerald-600 mx-auto my-2 text-sm max-w-fit text-emerald-300 rounded-md p-2 cursor-pointer animate-bounce  "
+                  }
+                  onClick={() => onConfirm()}
+                >
+                  Confirm RSVP
+                </button>
 
                 <div className="wi-cover-byline">
                   Grace Mutunda &amp; Steve Ndemba
@@ -976,113 +757,8 @@ function WeddingInvitationInner() {
           <p className="text-[8px] text-center mt-1 text-gray-500">Scan RSVP</p>
         </div>
       </div>
-        {/* ── RSVP Confirmation Dialog ── */}
-        {showRsvpDialog && (
-          <div className="rsvp-overlay" onClick={(e) => { if (e.target === e.currentTarget && !rsvpSubmitting) setShowRsvpDialog(false); }}>
-            <div className="rsvp-card">
-              <div className="rsvp-border" />
-
-              {/* Botanical corner decoration */}
-              <svg className="rsvp-leaf" viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M155 5 C130 10, 100 20, 80 45 C65 63, 60 85, 70 105" stroke="#2a1f0a" strokeWidth="1.2" fill="none"/>
-                <path d="M80 45 C95 35, 118 28, 138 18" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M138 18 C128 24, 120 32, 118 42 C116 50, 120 56, 128 52 C136 48, 140 38, 138 18Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M100 32 C92 40, 88 52, 90 62 C92 70, 98 72, 104 66 C110 60, 110 46, 100 32Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M80 45 C72 55, 68 68, 72 80" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M72 80 C62 72, 54 62, 56 50 C58 40, 66 38, 72 44 C78 50, 78 64, 72 80Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M72 80 C80 74, 90 72, 98 76 C104 80, 104 88, 96 90 C88 92, 78 88, 72 80Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M70 105 C65 95, 64 82, 70 72" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-              </svg>
-
-              {!invitee?.confirmed ? (
-                <>
-                  <span className="rsvp-script">Kindly</span>
-                  <div className="rsvp-heading">RSVP</div>
-                  <p className="rsvp-subtitle">
-                    please kindly reply by 10th May — {invitee?.fullName}
-                  </p>
-
-                  <div className="rsvp-rule" />
-
-                  <div className="rsvp-options">
-                    <button
-                      className={`rsvp-option${rsvpChoice === true ? " selected" : ""}`}
-                      onClick={() => setRsvpChoice(true)}
-                    >
-                      <div className="rsvp-checkbox">
-                        {rsvpChoice === true && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4l2.5 2.5L9 1" stroke="#f5f0e6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <span className="rsvp-option-text">Yes! Wouldn&apos;t miss it!</span>
-                    </button>
-
-                    <button
-                      className={`rsvp-option${rsvpChoice === false ? " selected" : ""}`}
-                      onClick={() => setRsvpChoice(false)}
-                    >
-                      <div className="rsvp-checkbox">
-                        {rsvpChoice === false && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4l2.5 2.5L9 1" stroke="#f5f0e6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <span className="rsvp-option-text">No. Sorry to miss it!</span>
-                    </button>
-                  </div>
-
-                  <hr className="rsvp-divider-line" />
-
-                  <div className="rsvp-actions">
-                    <button
-                      className="rsvp-btn-cancel"
-                      onClick={() => setShowRsvpDialog(false)}
-                      disabled={rsvpSubmitting}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="rsvp-btn-confirm"
-                      onClick={submitRsvp}
-                      disabled={rsvpChoice === null || rsvpSubmitting}
-                    >
-                      {rsvpSubmitting ? "Sending…" : "Confirm"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="rsvp-done">
-                  <span className="rsvp-done-icon">
-                    {invitee?.confirmed ? "❖" : "❧"}
-                  </span>
-                  <div className="rsvp-done-title">
-                    {invitee?.confirmed
-                      ? "See you there!"
-                      : "We'll miss you!"}
-                  </div>
-                  <p className="rsvp-done-sub">
-                    {invitee?.confirmed
-                      ? "Your attendance has been confirmed. We can’t wait to celebrate with you."
-                      : "Thank you for letting us know. You’ll be in our hearts on the day."}
-                  </p>
-                  <div className="rsvp-rule" style={{ marginTop: "1.2rem" }} />
-                  <button
-                    className="rsvp-btn-confirm"
-                    style={{ marginTop: "0.5rem" }}
-                    onClick={() => setShowRsvpDialog(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </>
-    );
+    </>
+  );
 }
 
 // ── Default export wraps inner component in Suspense ──
