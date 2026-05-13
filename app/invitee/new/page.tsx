@@ -26,7 +26,7 @@ const BLANK_INVITEE: TInvitee = {
   tableMates: [],
   phoneNumber: "",
   seatNumber: 1,
-  confirmed: true,
+  confirmed: false,
   createdAt: new Date(),
   status: "Couple",
   family: "MUTUNDA",
