@@ -32,7 +32,6 @@ function WeddingInvitationInner() {
   const [rsvpChoice, setRsvpChoice] = useState<boolean | null>(null);
   const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
 
-
   useEffect(() => {
     const fetchInvitee = async () => {
       if (!id) return;
@@ -144,7 +143,7 @@ function WeddingInvitationInner() {
       .eq("id", id);
 
     if (!error) {
-      setInvitee((prev) => prev ? { ...prev, confirmed: rsvpChoice } : prev);
+      setInvitee((prev) => (prev ? { ...prev, confirmed: rsvpChoice } : prev));
       setShowRsvpDialog(false);
     }
     setRsvpSubmitting(false);
@@ -768,17 +767,17 @@ function WeddingInvitationInner() {
 
       <div className="wi-scene">
         <div className="wi-controls">
-          <button
+          {/* <button
             className={`wi-btn${!isOpen ? " active" : ""}`}
             onClick={() => setIsOpen(false)}
           >
             Closed
-          </button>
+          </button> */}
           <button
             className={`wi-btn${isOpen ? " active" : ""}`}
-            onClick={() => setIsOpen(true)}
+            onClick={() => setIsOpen(!isOpen)}
           >
-            Open
+            {isOpen ? "Fermer " : "Ouvrir "} l'invitation
           </button>
         </div>
 
@@ -918,7 +917,12 @@ function WeddingInvitationInner() {
                 {invitee?.confirmed ? (
                   <p
                     className="text-center mx-auto my-2 text-xs uppercase"
-                    style={{ color: "#16a34a", fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.12em", fontWeight: 600 }}
+                    style={{
+                      color: "#16a34a",
+                      fontFamily: "'Cormorant Garamond', serif",
+                      letterSpacing: "0.12em",
+                      fontWeight: 600,
+                    }}
                   >
                     ❖ See you there!
                   </p>
@@ -976,113 +980,188 @@ function WeddingInvitationInner() {
           <p className="text-[8px] text-center mt-1 text-gray-500">Scan RSVP</p>
         </div>
       </div>
-        {/* ── RSVP Confirmation Dialog ── */}
-        {showRsvpDialog && (
-          <div className="rsvp-overlay" onClick={(e) => { if (e.target === e.currentTarget && !rsvpSubmitting) setShowRsvpDialog(false); }}>
-            <div className="rsvp-card">
-              <div className="rsvp-border" />
+      {/* ── RSVP Confirmation Dialog ── */}
+      {showRsvpDialog && (
+        <div
+          className="rsvp-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !rsvpSubmitting)
+              setShowRsvpDialog(false);
+          }}
+        >
+          <div className="rsvp-card">
+            <div className="rsvp-border" />
 
-              {/* Botanical corner decoration */}
-              <svg className="rsvp-leaf" viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M155 5 C130 10, 100 20, 80 45 C65 63, 60 85, 70 105" stroke="#2a1f0a" strokeWidth="1.2" fill="none"/>
-                <path d="M80 45 C95 35, 118 28, 138 18" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M138 18 C128 24, 120 32, 118 42 C116 50, 120 56, 128 52 C136 48, 140 38, 138 18Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M100 32 C92 40, 88 52, 90 62 C92 70, 98 72, 104 66 C110 60, 110 46, 100 32Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M80 45 C72 55, 68 68, 72 80" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M72 80 C62 72, 54 62, 56 50 C58 40, 66 38, 72 44 C78 50, 78 64, 72 80Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M72 80 C80 74, 90 72, 98 76 C104 80, 104 88, 96 90 C88 92, 78 88, 72 80Z" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-                <path d="M70 105 C65 95, 64 82, 70 72" stroke="#2a1f0a" strokeWidth="1" fill="none"/>
-              </svg>
+            {/* Botanical corner decoration */}
+            <svg
+              className="rsvp-leaf"
+              viewBox="0 0 160 140"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M155 5 C130 10, 100 20, 80 45 C65 63, 60 85, 70 105"
+                stroke="#2a1f0a"
+                strokeWidth="1.2"
+                fill="none"
+              />
+              <path
+                d="M80 45 C95 35, 118 28, 138 18"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M138 18 C128 24, 120 32, 118 42 C116 50, 120 56, 128 52 C136 48, 140 38, 138 18Z"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M100 32 C92 40, 88 52, 90 62 C92 70, 98 72, 104 66 C110 60, 110 46, 100 32Z"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M80 45 C72 55, 68 68, 72 80"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M72 80 C62 72, 54 62, 56 50 C58 40, 66 38, 72 44 C78 50, 78 64, 72 80Z"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M72 80 C80 74, 90 72, 98 76 C104 80, 104 88, 96 90 C88 92, 78 88, 72 80Z"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+              <path
+                d="M70 105 C65 95, 64 82, 70 72"
+                stroke="#2a1f0a"
+                strokeWidth="1"
+                fill="none"
+              />
+            </svg>
 
-              {!invitee?.confirmed ? (
-                <>
-                  <span className="rsvp-script">Kindly</span>
-                  <div className="rsvp-heading">RSVP</div>
-                  <p className="rsvp-subtitle">
-                    please kindly reply by 10th May — {invitee?.fullName}
-                  </p>
+            {!invitee?.confirmed ? (
+              <>
+                <span className="rsvp-script">Veuillez</span>
+                <div className="rsvp-heading">RSVP</div>
+                <p className="rsvp-subtitle">
+                  Veuillez répondre avant le 31 mai — {invitee?.fullName}
+                </p>
 
-                  <div className="rsvp-rule" />
+                <div className="rsvp-rule" />
 
-                  <div className="rsvp-options">
-                    <button
-                      className={`rsvp-option${rsvpChoice === true ? " selected" : ""}`}
-                      onClick={() => setRsvpChoice(true)}
-                    >
-                      <div className="rsvp-checkbox">
-                        {rsvpChoice === true && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4l2.5 2.5L9 1" stroke="#f5f0e6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <span className="rsvp-option-text">Yes! Wouldn&apos;t miss it!</span>
-                    </button>
-
-                    <button
-                      className={`rsvp-option${rsvpChoice === false ? " selected" : ""}`}
-                      onClick={() => setRsvpChoice(false)}
-                    >
-                      <div className="rsvp-checkbox">
-                        {rsvpChoice === false && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4l2.5 2.5L9 1" stroke="#f5f0e6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <span className="rsvp-option-text">No. Sorry to miss it!</span>
-                    </button>
-                  </div>
-
-                  <hr className="rsvp-divider-line" />
-
-                  <div className="rsvp-actions">
-                    <button
-                      className="rsvp-btn-cancel"
-                      onClick={() => setShowRsvpDialog(false)}
-                      disabled={rsvpSubmitting}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="rsvp-btn-confirm"
-                      onClick={submitRsvp}
-                      disabled={rsvpChoice === null || rsvpSubmitting}
-                    >
-                      {rsvpSubmitting ? "Sending…" : "Confirm"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="rsvp-done">
-                  <span className="rsvp-done-icon">
-                    {invitee?.confirmed ? "❖" : "❧"}
-                  </span>
-                  <div className="rsvp-done-title">
-                    {invitee?.confirmed
-                      ? "See you there!"
-                      : "We'll miss you!"}
-                  </div>
-                  <p className="rsvp-done-sub">
-                    {invitee?.confirmed
-                      ? "Your attendance has been confirmed. We can’t wait to celebrate with you."
-                      : "Thank you for letting us know. You’ll be in our hearts on the day."}
-                  </p>
-                  <div className="rsvp-rule" style={{ marginTop: "1.2rem" }} />
+                <div className="rsvp-options">
                   <button
-                    className="rsvp-btn-confirm"
-                    style={{ marginTop: "0.5rem" }}
-                    onClick={() => setShowRsvpDialog(false)}
+                    className={`rsvp-option${rsvpChoice === true ? " selected" : ""}`}
+                    onClick={() => setRsvpChoice(true)}
                   >
-                    Close
+                    <div className="rsvp-checkbox">
+                      {rsvpChoice === true && (
+                        <svg
+                          width="10"
+                          height="8"
+                          viewBox="0 0 10 8"
+                          fill="none"
+                        >
+                          <path
+                            d="M1 4l2.5 2.5L9 1"
+                            stroke="#f5f0e6"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="rsvp-option-text">
+                      OUI ! JE NE MANQUERAIS ÇA POUR RIEN AU MONDE !
+                    </span>
+                  </button>
+
+                  <button
+                    className={`rsvp-option${rsvpChoice === false ? " selected" : ""}`}
+                    onClick={() => setRsvpChoice(false)}
+                  >
+                    <div className="rsvp-checkbox">
+                      {rsvpChoice === false && (
+                        <svg
+                          width="10"
+                          height="8"
+                          viewBox="0 0 10 8"
+                          fill="none"
+                        >
+                          <path
+                            d="M1 4l2.5 2.5L9 1"
+                            stroke="#f5f0e6"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="rsvp-option-text">
+                      NON. DÉSOLÉ(E) DE MANQUER ÇA !
+                    </span>
                   </button>
                 </div>
-              )}
-            </div>
+
+                <hr className="rsvp-divider-line" />
+
+                <div className="rsvp-actions">
+                  <button
+                    className="rsvp-btn-cancel"
+                    onClick={() => setShowRsvpDialog(false)}
+                    disabled={rsvpSubmitting}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    className="rsvp-btn-confirm"
+                    onClick={submitRsvp}
+                    disabled={rsvpChoice === null || rsvpSubmitting}
+                  >
+                    {rsvpSubmitting ? "Envoie..." : "Confirmer"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="rsvp-done">
+                <span className="rsvp-done-icon">
+                  {invitee?.confirmed ? "❖" : "❧"}
+                </span>
+                <div className="rsvp-done-title">
+                  {invitee?.confirmed ? "See you there!" : "We'll miss you!"}
+                </div>
+                <p className="rsvp-done-sub">
+                  {invitee?.confirmed
+                    ? "Your attendance has been confirmed. We can’t wait to celebrate with you."
+                    : "Thank you for letting us know. You’ll be in our hearts on the day."}
+                </p>
+                <div className="rsvp-rule" style={{ marginTop: "1.2rem" }} />
+                <button
+                  className="rsvp-btn-confirm"
+                  style={{ marginTop: "0.5rem" }}
+                  onClick={() => setShowRsvpDialog(false)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </>
-    );
+        </div>
+      )}
+    </>
+  );
 }
 
 // ── Default export wraps inner component in Suspense ──
