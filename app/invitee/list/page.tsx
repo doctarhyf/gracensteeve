@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Heart, Search, Pencil, Copy, Check, X } from "lucide-react";
+import { Heart, Search, Pencil, Copy, Check, X, FileDown } from "lucide-react";
+import * as XLSX from "xlsx";
 import { TInvitee } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { TABLE_NAMES } from "@/lib/consts";
@@ -19,7 +20,9 @@ export default function InviteesTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [familyFilter, setFamilyFilter] = useState("");
-  const [confirmedFilter, setConfirmedFilter] = useState<"" | "confirmed" | "pending">("");
+  const [confirmedFilter, setConfirmedFilter] = useState<
+    "" | "confirmed" | "pending"
+  >("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingInvitee, setEditingInvitee] = useState<TInvitee | null>(null);
   const [editForm, setEditForm] = useState<Partial<TInvitee>>({});
@@ -153,9 +156,7 @@ export default function InviteesTable() {
     }
 
     setInvitees((prev) =>
-      prev.map((i) =>
-        i.id === editingInvitee.id ? { ...i, ...editForm } : i,
-      ),
+      prev.map((i) => (i.id === editingInvitee.id ? { ...i, ...editForm } : i)),
     );
     setEditingInvitee(null);
     setSaving(false);
@@ -222,6 +223,36 @@ export default function InviteesTable() {
   const goPrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
   const goNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
 
+  const exportToExcel = () => {
+    const rows = filteredInvitees.map((i) => ({
+      "Full Name": i.fullName,
+      Status: i.status,
+      Family: i.family,
+      Table: i.tableNumber,
+      Seat: i.seatNumber,
+      Phone: i.phoneNumber,
+      RSVP: i.confirmed ? "Confirmed" : "Pending",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Invitees");
+
+    // Column widths
+    ws["!cols"] = [
+      { wch: 28 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 8 },
+      { wch: 8 },
+      { wch: 18 },
+      { wch: 12 },
+    ];
+
+    const label = [familyFilter || "All", confirmedFilter || "All"].join("_");
+    XLSX.writeFile(wb, `invitees_${label}.xlsx`);
+  };
+
   return (
     <div className="min-h-screen bg-[#d9d2c3] p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
@@ -271,13 +302,25 @@ export default function InviteesTable() {
 
               <select
                 value={confirmedFilter}
-                onChange={(e) => setConfirmedFilter(e.target.value as "" | "confirmed" | "pending")}
+                onChange={(e) =>
+                  setConfirmedFilter(
+                    e.target.value as "" | "confirmed" | "pending",
+                  )
+                }
                 className="w-full sm:w-40 px-4 py-3 rounded-xl border bg-white text-[#7a6340] outline-none focus:ring-2 focus:ring-[#c9ae6a] cursor-pointer"
               >
                 <option value="">All RSVP</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="pending">Pending</option>
               </select>
+
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#c9ae6a] hover:bg-[#b59a55] text-white text-sm font-semibold transition-colors whitespace-nowrap"
+              >
+                <FileDown size={16} />
+                Export Excel
+              </button>
             </div>
           </div>
 
@@ -443,9 +486,13 @@ export default function InviteesTable() {
                             className="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold flex items-center gap-1"
                           >
                             {copiedId === invitee.id ? (
-                              <><Check size={13} /> Copied</>
+                              <>
+                                <Check size={13} /> Copied
+                              </>
                             ) : (
-                              <><Copy size={13} /> Link</>
+                              <>
+                                <Copy size={13} /> Link
+                              </>
                             )}
                           </button>
 
@@ -502,7 +549,9 @@ export default function InviteesTable() {
           <div className="bg-[#f8f3ea] border border-[#d6c8a8] rounded-3xl shadow-2xl w-full max-w-lg">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-[#e5d8bc]">
-              <h2 className="text-2xl font-serif italic text-[#c49a1d]">Edit Invitee</h2>
+              <h2 className="text-2xl font-serif italic text-[#c49a1d]">
+                Edit Invitee
+              </h2>
               <button
                 onClick={() => setEditingInvitee(null)}
                 className="text-[#9d8453] hover:text-[#7a6340]"
@@ -515,20 +564,31 @@ export default function InviteesTable() {
             <div className="px-8 py-6 grid grid-cols-2 gap-4">
               {/* Full Name */}
               <div className="col-span-2">
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Full Name</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Full Name
+                </label>
                 <input
                   value={editForm.fullName || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, fullName: e.target.value }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 />
               </div>
 
               {/* Status */}
               <div>
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Status</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Status
+                </label>
                 <select
                   value={editForm.status || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as TInvitee["status"] }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      status: e.target.value as TInvitee["status"],
+                    }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 >
                   <option value="Mr.">Mr.</option>
@@ -543,10 +603,17 @@ export default function InviteesTable() {
 
               {/* Family */}
               <div>
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Family</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Family
+                </label>
                 <select
                   value={editForm.family || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, family: e.target.value as TInvitee["family"] }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      family: e.target.value as TInvitee["family"],
+                    }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 >
                   <option value="">Select family</option>
@@ -557,10 +624,17 @@ export default function InviteesTable() {
 
               {/* Table Number */}
               <div>
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Table</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Table
+                </label>
                 <select
                   value={String(editForm.tableNumber ?? "")}
-                  onChange={(e) => setEditForm((f) => ({ ...f, tableNumber: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      tableNumber: Number(e.target.value),
+                    }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 >
                   <option value="">Select table</option>
@@ -580,20 +654,31 @@ export default function InviteesTable() {
 
               {/* Seat Number */}
               <div>
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Seat Number</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Seat Number
+                </label>
                 <input
                   value={editForm.seatNumber || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, seatNumber: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      seatNumber: Number(e.target.value),
+                    }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 />
               </div>
 
               {/* Phone */}
               <div className="col-span-2">
-                <label className="text-xs uppercase text-[#7a6340] mb-1 block">Phone Number</label>
+                <label className="text-xs uppercase text-[#7a6340] mb-1 block">
+                  Phone Number
+                </label>
                 <input
                   value={editForm.phoneNumber || ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, phoneNumber: e.target.value }))
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border bg-white outline-none focus:ring-2 focus:ring-[#c9ae6a]"
                 />
               </div>
@@ -604,10 +689,14 @@ export default function InviteesTable() {
                   id="confirmed"
                   type="checkbox"
                   checked={editForm.confirmed || false}
-                  onChange={(e) => setEditForm((f) => ({ ...f, confirmed: e.target.checked }))}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, confirmed: e.target.checked }))
+                  }
                   className="w-4 h-4 accent-[#c9ae6a]"
                 />
-                <label htmlFor="confirmed" className="text-sm text-[#7a6340]">Confirmed (RSVP)</label>
+                <label htmlFor="confirmed" className="text-sm text-[#7a6340]">
+                  Confirmed (RSVP)
+                </label>
               </div>
             </div>
 
