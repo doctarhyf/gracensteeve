@@ -798,7 +798,7 @@ function WeddingInvitationInner() {
               <div className="wi-names">
                 Grace Mutunda
                 <span className="wi-amp">&amp;</span>
-                Steve Ndemba
+                Steeve Ndemba
               </div>
 
               <div className="wi-gold-rule">
@@ -938,7 +938,7 @@ function WeddingInvitationInner() {
                 )}
 
                 <div className="wi-cover-byline">
-                  Grace Mutunda &amp; Steve Ndemba
+                  Grace Mutunda &amp; Steeve Ndemba
                 </div>
               </div>
 
