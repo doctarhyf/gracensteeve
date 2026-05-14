@@ -206,14 +206,14 @@ function WeddingInvitationInner() {
           overflow: hidden;
         }
         .wi-card::after {
-          content: '';
+         /*  content: '';
           position: absolute;
           left: 50%;
           top: 0; bottom: 0;
           width: 1px;
           background: rgba(140,110,50,0.22);
           z-index: 5;
-          pointer-events: none;
+          pointer-events: none; */
         }
 
         /* ── Inside panels ── */
@@ -770,7 +770,7 @@ function WeddingInvitationInner() {
           {/* <button
             className={`wi-btn${!isOpen ? " active" : ""}`}
             onClick={() => setIsOpen(false)}
-          >
+          > removed
             Closed
           </button> */}
           <button
