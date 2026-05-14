@@ -3,6 +3,14 @@
 import Link from "next/link";
 import React, { useState } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { usePathname } from "next/navigation";
+
+const navLinks = [
+  { href: "/invitee", label: "Home", exact: true },
+  { href: "/invitee/list", label: "List des Invites" },
+  { href: "/invitee/new", label: "Ajounter Un invite" },
+  { href: "/invitee/tables", label: "Gestion de Tables" },
+];
 
 export default function InviteeLayout({
   children,
@@ -10,6 +18,10 @@ export default function InviteeLayout({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(true);
+  const pathname = usePathname();
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -29,13 +41,28 @@ export default function InviteeLayout({
           Invitee Menu
         </h2>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <Link href="/invitee" style={{ fontWeight: "bold" }}>
-            Home
-          </Link>
-          <Link href="/invitee/list">List des Invites</Link>
-          <Link href="/invitee/new">Ajounter Un invite</Link>
-          <Link href="/invitee/tables">Gestion de Tables</Link>
+        <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          {navLinks.map(({ href, label, exact }) => {
+            const active = isActive(href, exact);
+            return (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  fontWeight: active ? "700" : "400",
+                  color: active ? "#c49a1d" : "inherit",
+                  backgroundColor: active ? "#fdf6e3" : "transparent",
+                  borderLeft: active ? "3px solid #c49a1d" : "3px solid transparent",
+                  padding: "8px 10px",
+                  borderRadius: "4px",
+                  textDecoration: "none",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
 
