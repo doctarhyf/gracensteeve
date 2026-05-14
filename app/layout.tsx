@@ -3,8 +3,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Grace & Steve",
-  description: "Snap a picture, learn Chinese words.",
+  title: "Grace ❤️ Steeve",
+  description: "❤️ Two souls, one heart, one beautiful future together. ❤️",
 };
 
 export default function RootLayout({
