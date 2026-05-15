@@ -399,7 +399,6 @@ export default function InviteesTable() {
             <table className="w-full min-w-275">
               <thead>
                 <tr className="bg-[#efe7d3] text-left">
-                  <th className="px-6 py-5">No</th>
                   <th className="px-6 py-5">Status</th>
                   <th className="px-6 py-5">Guest</th>
                   <th className="px-6 py-5">Table</th>
@@ -415,18 +414,18 @@ export default function InviteesTable() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16">
+                    <td colSpan={8} className="text-center py-16">
                       Loading...
                     </td>
                   </tr>
                 ) : paginatedInvitees.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16">
+                    <td colSpan={8} className="text-center py-16">
                       No invitees found.
                     </td>
                   </tr>
                 ) : (
-                  paginatedInvitees.map((invitee, index) => (
+                  paginatedInvitees.map((invitee) => (
                     <tr
                       key={invitee.id}
                       className="border-t cursor-pointer hover:border-l-amber-700"
@@ -434,10 +433,6 @@ export default function InviteesTable() {
                         router.push(`/invitee/info?id=${invitee.id}`)
                       }
                     >
-                      <td className="px-6 py-5 text-[#9d8453] text-sm">
-                        {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-                      </td>
-
                       <td className="px-6 py-5 font-semibold">
                         {invitee.status}
                       </td>
