@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Heart, Search, Pencil, Copy, Check, X, FileDown } from "lucide-react";
+import { Heart, Search, Pencil, Copy, Check, X, FileDown, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { TInvitee } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,8 @@ export default function InviteesTable() {
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sngTables, setSngTables] = useState<Record<string, any>[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const router = useRouter();
 
   // FETCH
@@ -123,6 +125,42 @@ export default function InviteesTable() {
     }
 
     setInvitees((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  // BULK DELETE
+  const deleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedIds.size} invitee(s)?`,
+    );
+    if (!confirmDelete) return;
+
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+
+    const { error } = await supabase
+      .from(TABLE_NAMES.INVITEES)
+      .delete()
+      .in("id", ids);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to delete selected invitees.");
+      setBulkDeleting(false);
+      return;
+    }
+
+    setInvitees((prev) => prev.filter((i) => !selectedIds.has(i.id)));
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   // EDIT
@@ -224,6 +262,26 @@ export default function InviteesTable() {
   const goPrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
   const goNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
 
+  const isAllPageSelected =
+    paginatedInvitees.length > 0 &&
+    paginatedInvitees.every((i) => selectedIds.has(i.id));
+
+  const toggleSelectAll = () => {
+    if (isAllPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedInvitees.forEach((i) => next.delete(i.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedInvitees.forEach((i) => next.add(i.id));
+        return next;
+      });
+    }
+  };
+
   const exportToExcel = () => {
     const rows = filteredInvitees.map((i) => ({
       "Full Name": i.fullName,
@@ -322,6 +380,17 @@ export default function InviteesTable() {
                 <FileDown size={16} />
                 Export Excel
               </button>
+
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={deleteSelected}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  {bulkDeleting ? "Deleting..." : `Delete (${selectedIds.size})`}
+                </button>
+              )}
             </div>
           </div>
 
@@ -399,6 +468,14 @@ export default function InviteesTable() {
             <table className="w-full min-w-275">
               <thead>
                 <tr className="bg-[#efe7d3] text-left">
+                  <th className="px-4 py-5">
+                    <input
+                      type="checkbox"
+                      checked={isAllPageSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 accent-[#c9ae6a] cursor-pointer"
+                    />
+                  </th>
                   <th className="px-6 py-5">No</th>
                   <th className="px-6 py-5">Status</th>
                   <th className="px-6 py-5">Guest</th>
@@ -415,13 +492,13 @@ export default function InviteesTable() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16">
+                    <td colSpan={10} className="text-center py-16">
                       Loading...
                     </td>
                   </tr>
                 ) : paginatedInvitees.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16">
+                    <td colSpan={10} className="text-center py-16">
                       No invitees found.
                     </td>
                   </tr>
@@ -429,11 +506,23 @@ export default function InviteesTable() {
                   paginatedInvitees.map((invitee, index) => (
                     <tr
                       key={invitee.id}
-                      className="border-t cursor-pointer hover:border-l-amber-700"
+                      className={`border-t cursor-pointer hover:border-l-amber-700 ${selectedIds.has(invitee.id) ? "bg-amber-50" : ""}`}
                       onClick={() =>
                         router.push(`/invitee/info?id=${invitee.id}`)
                       }
                     >
+                      <td
+                        className="px-4 py-5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(invitee.id)}
+                          onChange={() => toggleSelect(invitee.id)}
+                          className="w-4 h-4 accent-[#c9ae6a] cursor-pointer"
+                        />
+                      </td>
+
                       <td className="px-6 py-5 text-[#9d8453] text-sm">
                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
