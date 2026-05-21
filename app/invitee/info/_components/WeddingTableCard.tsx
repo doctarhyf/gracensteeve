@@ -38,7 +38,7 @@ export default function WeddingTableCard({ invitee }: Props) {
                 <div className="text-[#c49a1d] text-4xl my-3 font-serif">&</div>
 
                 <h1 className="font-serif text-5xl leading-tight text-[#c49a1d] italic">
-                  Steve Ndemba
+                  Steeve Ndemba
                 </h1>
 
                 <div className="flex items-center gap-4 mt-5">
