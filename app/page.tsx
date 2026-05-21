@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense, useEffect } from "react";
 import QRCode from "react-qr-code";
+import WeddingProgram from "./_components/WeddingProgram";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -866,14 +867,22 @@ function WeddingInvitationInner() {
                 </p>
               </div> */}
 
-              <div className="wi-photo-frame">
-                <Image
+              <div className="wwi-photo-frame">
+                <WeddingProgram />
+
+                <p className=" text-transparent  ">
+                  Les mariés se tiendront à l’accueil pour vous recevoir
+                  chaleureusement et souhaiteraient recevoir les cadeaux en
+                  espèce.
+                </p>
+
+                {/* <Image
                   src="/right.jpeg"
                   alt="Wedding photo"
                   fill
                   style={{ objectFit: "cover", objectPosition: "center top" }}
                   sizes="(max-width: 600px) 58vw, 200px"
-                />
+                /> */}
               </div>
 
               <div className="wi-verse">
