@@ -809,7 +809,7 @@ function WeddingInvitationInner() {
               </div>
 
               <div className="wi-invite-label">
-                Mr / Mme / Couple :{" "}
+                {invitee.status} :{" "}
                 <span className="underline">{invitee.fullName}</span>
               </div>
 
@@ -867,23 +867,13 @@ function WeddingInvitationInner() {
                 </p>
               </div> */}
 
-              <div className="wwi-photo-frame">
-                <WeddingProgram />
+              <WeddingProgram />
 
-                <p className=" text-transparent  ">
-                  Les mariés se tiendront à l’accueil pour vous recevoir
-                  chaleureusement et souhaiteraient recevoir les cadeaux en
-                  espèce.
-                </p>
-
-                {/* <Image
-                  src="/right.jpeg"
-                  alt="Wedding photo"
-                  fill
-                  style={{ objectFit: "cover", objectPosition: "center top" }}
-                  sizes="(max-width: 600px) 58vw, 200px"
-                /> */}
-              </div>
+              <p className=" text-transparent  ">
+                Les mariés se tiendront à l’accueil pour vous recevoir
+                chaleureusement et souhaiteraient recevoir les cadeaux en
+                espèce.
+              </p>
 
               <div className="wi-verse">
                 &ldquo;Ce que Dieu a uni,
