@@ -270,7 +270,7 @@ export default function WeddingProgram() {
       >
         {/* Title */}
         <div
-          className="prog-section md:mt-[10em]  "
+          className="prog-section sm:mt-[10em]  "
           style={{ textAlign: "center", marginBottom: 12 }}
         >
           <h1
@@ -283,7 +283,7 @@ export default function WeddingProgram() {
               margin: 0,
               textTransform: "uppercase",
             }}
-            className="  md:text-[.6em]   "
+            className="  sm:text-[.6em]   "
           >
             Le Programme
           </h1>
