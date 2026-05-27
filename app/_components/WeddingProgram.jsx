@@ -270,7 +270,7 @@ export default function WeddingProgram() {
       >
         {/* Title */}
         <div
-          className="prog-section sm:mt-[10em]  "
+          className="prog-section sm:mt-[3em]  "
           style={{ textAlign: "center", marginBottom: 12 }}
         >
           <h1
