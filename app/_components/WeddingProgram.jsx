@@ -5,7 +5,7 @@ const divider = (
     style={{
       display: "flex",
       alignItems: "center",
-      margin: "18px 0",
+      margin: ".2em 0",
       gap: 8,
     }}
   >
@@ -259,7 +259,7 @@ export default function WeddingProgram() {
       <div
         className={visible ? "prog-visible" : ""}
         style={{
-          background: "#fdf6ed",
+          background: "",
           maxWidth: 440,
           width: "100%",
           borderRadius: 4,
@@ -270,19 +270,20 @@ export default function WeddingProgram() {
       >
         {/* Title */}
         <div
-          className="prog-section mt-28 "
-          style={{ textAlign: "center", marginBottom: 28 }}
+          className="prog-section md:mt-28 "
+          style={{ textAlign: "center", marginBottom: 12 }}
         >
           <h1
             style={{
               fontFamily: "'Cinzel', 'Georgia', serif",
-              //fontSize: ".5em",
+              //fontSize: ".6em",
               fontWeight: 700,
               letterSpacing: "0.12em",
               color: "#1a1008",
               margin: 0,
               textTransform: "uppercase",
             }}
+            className="  md:text-[.6em]   "
           >
             Le Programme
           </h1>
