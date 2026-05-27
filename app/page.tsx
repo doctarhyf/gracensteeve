@@ -869,12 +869,6 @@ function WeddingInvitationInner() {
 
               <WeddingProgram />
 
-              <p className=" text-transparent  ">
-                Les mariés se tiendront à l’accueil pour vous recevoir
-                chaleureusement et souhaiteraient recevoir les cadeaux en
-                espèce.
-              </p>
-
               <div className="wi-verse">
                 &ldquo;Ce que Dieu a uni,
                 <br />
